@@ -38,16 +38,6 @@ window.factCheckDocument = {
 
 A pure JSON object (without the `window.factCheckDocument =` wrapper) also works.
 
-## Hosting it on GitHub Pages
-
-1. Create a new public GitHub repo, e.g. `factcheck-viewer`.
-2. Add `index.html` (and optionally this `README.md`) to the repo.
-3. Push to `main`.
-4. In the repo, go to **Settings → Pages**. Under **Build and deployment**, set the source to **Deploy from a branch**, branch `main`, folder `/ (root)`. Save.
-5. After ~1 minute the site is live at `https://<your-username>.github.io/factcheck-viewer/`.
-
-That's it — share the URL with collaborators.
-
 ## Running locally
 
 Just open `index.html` in a browser. No build step, no dependencies.
