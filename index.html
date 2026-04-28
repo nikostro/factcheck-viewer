@@ -74,7 +74,7 @@
     .icon-sm{width:16px;height:16px}
     .header-row{display:flex;align-items:center;gap:12px;margin-bottom:8px}
     .section-note{margin:6px 0 0;color:var(--muted);font-size:14px}
-    .top-link-wrap{margin:14px 0 18px}
+    .top-link-wrap{margin-bottom:14px}
     .top-link-btn{text-decoration:none}
     .top-link-btn:hover{text-decoration:none}
     @media (max-width: 980px){
@@ -90,8 +90,8 @@
     .privacy-note{display:flex;gap:10px;align-items:flex-start;background:var(--green-soft);color:var(--green-text);border:1px solid var(--green-pill);border-radius:14px;padding:12px 14px;font-size:13px;line-height:1.5;margin-bottom:24px}
     .drop-zone{border:2px dashed var(--border);border-radius:18px;padding:24px;text-align:center;background:#f8fafc;transition:.15s;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px}
     .drop-zone:hover, .drop-zone.dragover{border-color:#94a3b8;background:#f1f5f9}
-    .drop-zone-title{font-size:15px;font-weight:700}
-    .drop-zone-helper{color:var(--muted);font-size:13px;display:inline-block;padding:7px 12px;border:1px dashed #cbd5e1;border-radius:10px;background:#fff;max-width:100%;white-space:nowrap}
+    .drop-zone strong{display:block;margin-bottom:4px;font-size:15px}
+    .drop-zone span{color:var(--muted);font-size:13px;white-space:nowrap}
     .or-divider{display:flex;align-items:center;gap:12px;margin:20px 0;color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.08em}
     .or-divider::before, .or-divider::after{content:"";flex:1;height:1px;background:var(--border)}
     textarea.paste-box{width:100%;min-height:180px;padding:14px;border-radius:14px;border:1px solid var(--border);background:#f8fafc;font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;font-size:13px;line-height:1.5;outline:none;resize:vertical}
@@ -115,11 +115,9 @@
     .inline-detail{position:absolute;inset:0;background:#fff;border:1px solid var(--border);border-radius:24px;box-shadow:var(--shadow);z-index:5;overflow:hidden}
     .inline-detail .modal-scroll{max-height:calc(100vh - 250px)}
     .claim-highlight.checked{opacity:.45}
-    .viewer-actions{display:flex;gap:10px;flex-wrap:wrap;margin:0 0 18px}
     @media (max-width: 980px){
       .inline-detail{position:fixed;left:16px;right:16px;top:16px;bottom:16px;border-radius:20px}
       .inline-detail .modal-scroll{max-height:none;height:calc(100% - 72px)}
-      .drop-zone-helper{white-space:normal}
     }
   </style>
 </head>
@@ -133,7 +131,7 @@
   <script>
     /* ---------- Loader: parse a pasted/uploaded factCheckDocument ---------- */
     (function loaderInit() {
-      const SUGGESTED_PROMPT_URL = "https://docs.google.com";
+      const SUGGESTED_PROMPT_URL = "https://docs.google.com/document/d/1cKT74QdTjQr-zsw7hpkfgsYhcX43LAEyRURAM2zUiJg/";
       const exampleDocument = {
         title: "Example fact-check document",
         subtitle: "Demo content to preview the interface",
@@ -196,6 +194,9 @@
           <div class="loader-wrap">
             <div class="loader-panel">
               <h1>Fact-check viewer</h1>
+              <div class="top-link-wrap">
+                <a class="btn top-link-btn" href="${SUGGESTED_PROMPT_URL}" target="_blank" rel="noreferrer">Click here for suggested fact checking prompt</a>
+              </div>
               <p class="sub">Load a <code>factCheckDocument</code> to view it. Your file is parsed in your browser and is never uploaded anywhere.</p>
               <div class="top-link-wrap">
                 <a class="btn top-link-btn" href="${SUGGESTED_PROMPT_URL}" target="_blank" rel="noreferrer">Suggested fact checking prompt</a>
@@ -207,8 +208,8 @@
               </div>
 
               <label for="fileInput" class="drop-zone" id="dropZone">
-                <div class="drop-zone-title">Drop a file here, or click to choose</div>
-                <div class="drop-zone-helper">drop a factCheckDocument.json or .js file here</div>
+                <strong>Drop a file here, or click to choose</strong>
+                <span>drop a factCheckDocument.json or .js file here</span>
                 <input id="fileInput" type="file" accept=".js,.json,application/json,text/javascript" style="display:none" />
               </label>
 
