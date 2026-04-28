@@ -88,7 +88,7 @@
     .loader-panel h1{font-size:28px;margin-bottom:8px}
     .loader-panel .sub{margin:0 0 24px}
     .privacy-note{display:flex;gap:10px;align-items:flex-start;background:var(--green-soft);color:var(--green-text);border:1px solid var(--green-pill);border-radius:14px;padding:12px 14px;font-size:13px;line-height:1.5;margin-bottom:24px}
-    .drop-zone{border:2px dashed var(--border);border-radius:18px;padding:28px;text-align:center;background:#f8fafc;transition:.15s;cursor:pointer}
+    .drop-zone{border:2px dashed var(--border);border-radius:18px;padding:24px;text-align:center;background:#f8fafc;transition:.15s;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px}
     .drop-zone:hover, .drop-zone.dragover{border-color:#94a3b8;background:#f1f5f9}
     .drop-zone strong{display:block;margin-bottom:4px;font-size:15px}
     .drop-zone span{color:var(--muted);font-size:13px;white-space:nowrap}
@@ -198,6 +198,9 @@
                 <a class="btn top-link-btn" href="${SUGGESTED_PROMPT_URL}" target="_blank" rel="noreferrer">Click here for suggested fact checking prompt</a>
               </div>
               <p class="sub">Load a <code>factCheckDocument</code> to view it. Your file is parsed in your browser and is never uploaded anywhere.</p>
+              <div class="top-link-wrap">
+                <a class="btn top-link-btn" href="${SUGGESTED_PROMPT_URL}" target="_blank" rel="noreferrer">Suggested fact checking prompt</a>
+              </div>
 
               <div class="privacy-note">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;margin-top:1px"><path d="M12 3l7 4v5c0 5-3.5 8.5-7 9-3.5-.5-7-4-7-9V7l7-4Z"/><path d="m9 12 2 2 4-4"/></svg>
@@ -455,6 +458,10 @@
 
             <div class="layout viewer-wrap">
               <section class="panel section">
+                <div class="viewer-actions">
+                  <button id="resetFactCheckBtn" class="btn">Reset fact check</button>
+                  <button id="newFactCheckBtn" class="btn">New fact check</button>
+                </div>
                 <h2>${esc(doc.passageHeading || "Original passage")}</h2>
                 <p class="section-note">The prose remains continuous; only the claim-bearing language is color-coded.</p>
                 <div class="passage-box" style="margin-top:20px">
@@ -497,6 +504,14 @@
         document.getElementById("searchInput").addEventListener("input", (e) => {
           state.query = e.target.value;
           render();
+        });
+        document.getElementById("resetFactCheckBtn").addEventListener("click", () => {
+          state.checkedIds.clear();
+          closeModal();
+        });
+        document.getElementById("newFactCheckBtn").addEventListener("click", () => {
+          window.factCheckDocument = null;
+          if (window.__showLoader) window.__showLoader();
         });
 
         app.querySelectorAll("[data-open-claim]").forEach(el => {
