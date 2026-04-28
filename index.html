@@ -32,7 +32,12 @@
     .metric{padding:16px;border-radius:20px;border:1px solid var(--border)}
     .metric .num{font-size:32px;font-weight:700}
     .metric .label{font-size:14px;color:var(--muted);margin-top:6px}
-    .layout{display:grid;grid-template-columns:minmax(0,1.65fr) minmax(320px,.95fr);gap:24px}
+    .layout{display:grid;grid-template-columns:calc(var(--split-pct,50) * 1%) 8px 1fr;gap:16px;align-items:stretch}
+    .resizer{cursor:col-resize;background:transparent;border-radius:4px;position:relative;touch-action:none;align-self:stretch}
+    .resizer::before{content:"";position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:4px;height:48px;border-radius:4px;background:var(--border);transition:background .15s}
+    .resizer:hover::before,.resizer.dragging::before{background:#94a3b8}
+    body.resizing{cursor:col-resize;user-select:none}
+    body.resizing *{user-select:none !important}
     .section{padding:24px}
     .muted{color:var(--muted)}
     .passage-box{border:1px solid #f1f5f9;background:#f8fafcb3;border-radius:24px;padding:20px}
@@ -44,6 +49,14 @@
     .search:focus{background:#fff;box-shadow:0 0 0 4px #e2e8f0}
     .search-icon{position:absolute;left:12px;top:50%;transform:translateY(-50%);opacity:.5}
     .claims-list{max-height:65vh;overflow:auto;padding-right:4px}
+    .claims-footer{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:16px;padding-top:16px;border-top:1px solid #f1f5f9}
+    .claims-footer .flagged-count{font-size:13px;color:var(--muted);font-weight:600}
+    .claims-footer .flagged-count strong{color:var(--text)}
+    .viewer-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:20px;padding-top:20px;border-top:1px solid #f1f5f9;flex-wrap:wrap}
+    .flag-btn{display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:8px;border:1px solid var(--border);background:#fff;color:var(--muted);cursor:pointer;flex-shrink:0;transition:.15s;padding:0}
+    .flag-btn:hover{background:#f8fafc;color:var(--text)}
+    .flag-btn.flagged{background:#fef3c7;color:#b45309;border-color:#fcd34d}
+    .flag-btn.flagged:hover{background:#fde68a}
     .claim-card{width:100%;text-align:left;border:1px solid var(--border);background:#fff;border-radius:20px;padding:16px;margin-bottom:12px;cursor:pointer;transition:.15s;box-shadow:none}
     .claim-card:hover{transform:translateY(-2px);box-shadow:var(--shadow)}
     .claim-card.active{border-color:transparent;box-shadow:0 0 0 2px currentColor inset}
@@ -79,6 +92,7 @@
     .top-link-btn:hover{text-decoration:none}
     @media (max-width: 980px){
       .layout,.modal-grid{grid-template-columns:1fr}
+      .resizer{display:none}
       .metrics{min-width:0;width:100%}
       h1{font-size:34px}
     }
@@ -198,22 +212,11 @@
                 <a class="btn top-link-btn" href="${SUGGESTED_PROMPT_URL}" target="_blank" rel="noreferrer">Click here for suggested fact checking prompt</a>
               </div>
               <p class="sub">Load a <code>factCheckDocument</code> to view it. Your file is parsed in your browser and is never uploaded anywhere.</p>
-              <div class="top-link-wrap">
-                <a class="btn top-link-btn" href="${SUGGESTED_PROMPT_URL}" target="_blank" rel="noreferrer">Suggested fact checking prompt</a>
-              </div>
 
               <div class="privacy-note">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;margin-top:1px"><path d="M12 3l7 4v5c0 5-3.5 8.5-7 9-3.5-.5-7-4-7-9V7l7-4Z"/><path d="m9 12 2 2 4-4"/></svg>
                 <span><strong>Stays on your device.</strong> This page has no server. The file is read with the browser's FileReader API and parsed locally.</span>
               </div>
-
-              <label for="fileInput" class="drop-zone" id="dropZone">
-                <strong>Drop a file here, or click to choose</strong>
-                <span>drop a factCheckDocument.json or .js file here</span>
-                <input id="fileInput" type="file" accept=".js,.json,application/json,text/javascript" style="display:none" />
-              </label>
-
-              <div class="or-divider">or paste below</div>
 
               <textarea id="pasteBox" class="paste-box" placeholder='Paste either:&#10;&#10;  window.factCheckDocument = { "title": "...", "claims": [...] };&#10;&#10;or just the JSON object:&#10;&#10;  { "title": "...", "claims": [...] }'></textarea>
 
@@ -222,6 +225,14 @@
                 <button id="clearBtn" class="btn">Clear</button>
                 <button id="exampleBtn" class="btn btn-gray">Example document</button>
               </div>
+
+              <div class="or-divider">or drop a file</div>
+
+              <label for="fileInput" class="drop-zone" id="dropZone">
+                <strong>Drop a file here, or click to choose</strong>
+                <span>drop a factCheckDocument.json or .js file here</span>
+                <input id="fileInput" type="file" accept=".js,.json,application/json,text/javascript" style="display:none" />
+              </label>
 
               <div id="err" class="err"></div>
 
@@ -320,7 +331,8 @@
         exampleBtn.addEventListener("click", () => {
           pasteBox.value = JSON.stringify(exampleDocument, null, 2);
           clearError();
-          parseAndBoot(pasteBox.value);
+          pasteBox.focus();
+          pasteBox.scrollTop = 0;
         });
 
         fileInput.addEventListener("change", (e) => readFile(e.target.files[0]));
@@ -380,6 +392,8 @@
         selectedIds: null,
         activeId: null,
         checkedIds: new Set(),
+        flaggedIds: new Set(),
+        splitPct: 50,
       };
 
       function esc(s) {
@@ -403,6 +417,9 @@
       }
       function iconWarn() {
         return '<svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 2 20h20L12 3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>';
+      }
+      function iconFlag(filled) {
+        return '<svg class="icon-sm" viewBox="0 0 24 24" fill="' + (filled ? "currentColor" : "none") + '" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 21V4h13l-2 4 2 4H4"/></svg>';
       }
       function pill(verdict) {
         return '<span class="pill" style="' + verdictStyles[verdict].pill + '">' + esc(verdict) + '</span>';
@@ -453,28 +470,34 @@
                 ${pill("green")} <span>${esc(doc.legend?.green || "directly confirmed")}</span>
                 ${pill("yellow")} <span>${esc(doc.legend?.yellow || "check / clarification needed")}</span>
                 ${pill("blue")} <span>${esc(doc.legend?.blue || "exact quote needs transcript or original recording")}</span>
+                ${pill("red")} <span>${esc(doc.legend?.red || "incorrect or contradicted")}</span>
+                ${cts.purple > 0 ? `${pill("purple")} <span>${esc(doc.legend?.purple || "opinion or interpretation")}</span>` : ""}
               </div>
             </div>
 
             <div class="layout viewer-wrap">
               <section class="panel section">
+                <h2>${esc(doc.passageHeading || "Original passage")}</h2>
+                <p class="section-note">The prose remains continuous; only the claim-bearing language is color-coded.</p>
+                <div class="passage-box" style="margin-top:20px">
+                  ${(doc.segments && doc.segments.length)
+                    ? `<p class="passage">
+                        ${doc.segments.map((segment) => {
+                          if (!segment.claimIds || !segment.verdict) return esc(segment.text);
+                          const title = segment.claimIds.map(id => `#${id}: ${cm[id]?.claim || ""}`).join("\\n\\n");
+                          const checkedClass = segment.claimIds.some(id => state.checkedIds.has(id)) ? " checked" : "";
+                          return `<button class="claim-highlight${checkedClass}" data-claim-ids="${segment.claimIds.join(",")}" title="${esc(title)}" style="${verdictStyles[segment.verdict].bg}">${esc(segment.text)}</button>`;
+                        }).join("")}
+                      </p>`
+                    : `<div class="passage" style="white-space:pre-wrap">${esc(doc.passage || "")}</div>`}
+                </div>
                 <div class="viewer-actions">
                   <button id="resetFactCheckBtn" class="btn">Reset fact check</button>
                   <button id="newFactCheckBtn" class="btn">New fact check</button>
                 </div>
-                <h2>${esc(doc.passageHeading || "Original passage")}</h2>
-                <p class="section-note">The prose remains continuous; only the claim-bearing language is color-coded.</p>
-                <div class="passage-box" style="margin-top:20px">
-                  <p class="passage">
-                    ${(doc.segments || []).map((segment, idx) => {
-                      if (!segment.claimIds || !segment.verdict) return esc(segment.text);
-                      const title = segment.claimIds.map(id => `#${id}: ${cm[id]?.claim || ""}`).join("\\n\\n");
-                      const checkedClass = segment.claimIds.some(id => state.checkedIds.has(id)) ? " checked" : "";
-                      return `<button class="claim-highlight${checkedClass}" data-claim-ids="${segment.claimIds.join(",")}" title="${esc(title)}" style="${verdictStyles[segment.verdict].bg}">${esc(segment.text)}</button>`;
-                    }).join("")}
-                  </p>
-                </div>
               </section>
+
+              <div class="resizer" id="paneResizer" role="separator" aria-orientation="vertical" aria-label="Resize panes" tabindex="0"></div>
 
               <aside class="panel section">
                 <h2>${esc(doc.claimsHeading || "Claims index")}</h2>
@@ -486,27 +509,49 @@
                 <div class="claims-list">
                   ${claims.map(claim => {
                     const active = state.activeId === claim.id && state.selectedIds && state.selectedIds.includes(claim.id);
-                    return `<button class="claim-card${active ? " active" : ""}" data-open-claim="${esc(claim.id)}" style="${active ? verdictStyles[claim.verdict].soft : ""}${active ? ";color:" + (verdictStyles[claim.verdict].soft.match(/color:[^;]+/) ? "" : "") : ""}">
+                    const flagged = state.flaggedIds.has(claim.id);
+                    return `<button class="claim-card${active ? " active" : ""}" data-open-claim="${esc(claim.id)}" style="${active ? verdictStyles[claim.verdict].soft : ""}">
                       <div class="claim-top">
                         <div class="claim-id">Claim ${esc(claim.id)}</div>
-                        ${pill(claim.verdict)}
+                        <div style="display:flex;align-items:center;gap:8px">
+                          ${pill(claim.verdict)}
+                          <span class="flag-btn${flagged ? " flagged" : ""}" data-flag-id="${esc(claim.id)}" role="button" aria-pressed="${flagged}" title="${flagged ? "Unflag" : "Flag"} this claim">${iconFlag(flagged)}</span>
+                        </div>
                       </div>
                       <div class="claim-text">${esc(claim.claim)}</div>
                       ${claim.snippet ? `<div class="claim-snippet">Passage: ${esc(claim.snippet)}</div>` : ""}
                     </button>`;
                   }).join("")}
                 </div>
+                <div class="claims-footer">
+                  <span class="flagged-count">Flagged: <strong>${state.flaggedIds.size}</strong></span>
+                  <button id="copyFlaggedBtn" class="btn" ${state.flaggedIds.size === 0 ? "disabled" : ""}>Copy flagged</button>
+                </div>
               </aside>
             </div>
           </div>
         `;
 
-        document.getElementById("searchInput").addEventListener("input", (e) => {
+        app.style.setProperty("--split-pct", state.splitPct);
+        const layoutEl = app.querySelector(".layout");
+        if (layoutEl) layoutEl.style.setProperty("--split-pct", state.splitPct);
+
+        const searchInput = document.getElementById("searchInput");
+        if (state.searchFocus != null) {
+          searchInput.focus();
+          const pos = state.searchFocus;
+          try { searchInput.setSelectionRange(pos, pos); } catch (_) { /* some input types reject this */ }
+          state.searchFocus = null;
+        }
+        searchInput.addEventListener("input", (e) => {
           state.query = e.target.value;
+          state.searchFocus = e.target.selectionStart;
           render();
         });
+
         document.getElementById("resetFactCheckBtn").addEventListener("click", () => {
           state.checkedIds.clear();
+          state.flaggedIds.clear();
           closeModal();
         });
         document.getElementById("newFactCheckBtn").addEventListener("click", () => {
@@ -514,12 +559,80 @@
           if (window.__showLoader) window.__showLoader();
         });
 
+        app.querySelectorAll("[data-flag-id]").forEach(el => {
+          el.addEventListener("click", (e) => {
+            e.stopPropagation();
+            e.preventDefault();
+            const id = el.getAttribute("data-flag-id");
+            if (state.flaggedIds.has(id)) state.flaggedIds.delete(id);
+            else state.flaggedIds.add(id);
+            render();
+          });
+        });
+
+        const copyBtn = document.getElementById("copyFlaggedBtn");
+        if (copyBtn) {
+          copyBtn.addEventListener("click", async () => {
+            const ids = Array.from(state.flaggedIds);
+            if (!ids.length) return;
+            const lines = ids.map(id => cm[id]?.snippet || cm[id]?.claim).filter(Boolean);
+            const text = lines.join("\n");
+            try {
+              await navigator.clipboard.writeText(text);
+              const original = copyBtn.textContent;
+              copyBtn.textContent = `Copied ${lines.length}`;
+              copyBtn.disabled = true;
+              setTimeout(() => { copyBtn.textContent = original; copyBtn.disabled = state.flaggedIds.size === 0; }, 1500);
+            } catch (_) {
+              copyBtn.textContent = "Copy failed";
+              setTimeout(() => { copyBtn.textContent = "Copy flagged"; }, 1500);
+            }
+          });
+        }
+
         app.querySelectorAll("[data-open-claim]").forEach(el => {
           el.addEventListener("click", () => openClaims([el.getAttribute("data-open-claim")]));
         });
         app.querySelectorAll("[data-claim-ids]").forEach(el => {
           el.addEventListener("click", () => openClaims(el.getAttribute("data-claim-ids").split(",")));
         });
+
+        const resizer = document.getElementById("paneResizer");
+        if (resizer && layoutEl) {
+          const onMove = (e) => {
+            const rect = layoutEl.getBoundingClientRect();
+            const pct = ((e.clientX - rect.left) / rect.width) * 100;
+            state.splitPct = Math.max(25, Math.min(75, pct));
+            layoutEl.style.setProperty("--split-pct", state.splitPct);
+          };
+          const onUp = (e) => {
+            resizer.classList.remove("dragging");
+            document.body.classList.remove("resizing");
+            window.removeEventListener("pointermove", onMove);
+            window.removeEventListener("pointerup", onUp);
+            try { resizer.releasePointerCapture(e.pointerId); } catch (_) {}
+          };
+          resizer.addEventListener("pointerdown", (e) => {
+            e.preventDefault();
+            resizer.classList.add("dragging");
+            document.body.classList.add("resizing");
+            try { resizer.setPointerCapture(e.pointerId); } catch (_) {}
+            window.addEventListener("pointermove", onMove);
+            window.addEventListener("pointerup", onUp);
+          });
+          resizer.addEventListener("keydown", (e) => {
+            if (e.key === "ArrowLeft" || e.key === "ArrowRight") {
+              e.preventDefault();
+              const delta = e.key === "ArrowLeft" ? -2 : 2;
+              state.splitPct = Math.max(25, Math.min(75, state.splitPct + delta));
+              layoutEl.style.setProperty("--split-pct", state.splitPct);
+            }
+          });
+          resizer.addEventListener("dblclick", () => {
+            state.splitPct = 50;
+            layoutEl.style.setProperty("--split-pct", state.splitPct);
+          });
+        }
 
         renderModal();
       }
