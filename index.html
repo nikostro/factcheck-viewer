@@ -14,6 +14,7 @@
       --purple-bg:#ddd6fe; --purple-soft:#f5f3ff; --purple-text:#5b21b6; --purple-pill:#ddd6fe;
       --shadow:0 1px 2px rgba(15,23,42,.06),0 8px 24px rgba(15,23,42,.06);
       --radius:28px;
+      --split-left:63%;
     }
     *{box-sizing:border-box}
     body{margin:0;font-family:ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:var(--bg);color:var(--text)}
@@ -32,8 +33,11 @@
     .metric{padding:16px;border-radius:20px;border:1px solid var(--border)}
     .metric .num{font-size:32px;font-weight:700}
     .metric .label{font-size:14px;color:var(--muted);margin-top:6px}
-    .layout{display:grid;grid-template-columns:minmax(0,1.65fr) minmax(320px,.95fr);gap:24px}
+    .layout{display:grid;grid-template-columns:minmax(420px,var(--split-left)) 12px minmax(320px,calc(100% - var(--split-left) - 12px));gap:0;align-items:stretch}
     .section{padding:24px}
+    .splitter{display:flex;align-items:center;justify-content:center;cursor:col-resize;touch-action:none}
+    .splitter::before{content:"";width:4px;height:72px;border-radius:999px;background:#cbd5e1;transition:.15s}
+    .splitter:hover::before,.splitter.dragging::before{background:#94a3b8;height:96px}
     .muted{color:var(--muted)}
     .passage-box{border:1px solid #f1f5f9;background:#f8fafcb3;border-radius:24px;padding:20px}
     .passage{font-size:18px;line-height:1.9;color:#1e293b}
@@ -74,8 +78,12 @@
     .icon-sm{width:16px;height:16px}
     .header-row{display:flex;align-items:center;gap:12px;margin-bottom:8px}
     .section-note{margin:6px 0 0;color:var(--muted);font-size:14px}
+    .top-link-wrap{margin:14px 0 18px}
+    .top-link-btn{text-decoration:none}
+    .top-link-btn:hover{text-decoration:none}
     @media (max-width: 980px){
       .layout,.modal-grid{grid-template-columns:1fr}
+      .splitter{display:none}
       .metrics{min-width:0;width:100%}
       h1{font-size:34px}
     }
@@ -85,18 +93,14 @@
     .loader-panel h1{font-size:28px;margin-bottom:8px}
     .loader-panel .sub{margin:0 0 24px}
     .privacy-note{display:flex;gap:10px;align-items:flex-start;background:var(--green-soft);color:var(--green-text);border:1px solid var(--green-pill);border-radius:14px;padding:12px 14px;font-size:13px;line-height:1.5;margin-bottom:24px}
-    .drop-zone{border:2px dashed var(--border);border-radius:18px;padding:28px;text-align:center;background:#f8fafc;transition:.15s;cursor:pointer}
-    .drop-zone:hover, .drop-zone.dragover{border-color:#94a3b8;background:#f1f5f9}
-    .drop-zone strong{display:block;margin-bottom:4px;font-size:15px}
-    .drop-zone span{color:var(--muted);font-size:13px}
-    .or-divider{display:flex;align-items:center;gap:12px;margin:20px 0;color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.08em}
-    .or-divider::before, .or-divider::after{content:"";flex:1;height:1px;background:var(--border)}
     textarea.paste-box{width:100%;min-height:180px;padding:14px;border-radius:14px;border:1px solid var(--border);background:#f8fafc;font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;font-size:13px;line-height:1.5;outline:none;resize:vertical}
     textarea.paste-box:focus{background:#fff;box-shadow:0 0 0 4px #e2e8f0}
     .btn{display:inline-flex;align-items:center;gap:8px;padding:12px 20px;border-radius:14px;border:1px solid var(--border);background:#fff;color:var(--text);font-size:14px;font-weight:600;cursor:pointer;transition:.15s}
     .btn:hover{background:#f8fafc}
     .btn-primary{background:var(--text);color:#fff;border-color:var(--text)}
     .btn-primary:hover{background:#1e293b}
+    .btn-gray{background:#e2e8f0;color:#0f172a;border-color:#cbd5e1}
+    .btn-gray:hover{background:#cbd5e1}
     .btn:disabled{opacity:.5;cursor:not-allowed}
     .actions-row{display:flex;gap:10px;margin-top:16px;flex-wrap:wrap}
     .err{margin-top:14px;padding:12px 14px;border-radius:12px;background:var(--red-soft);color:var(--red-text);border:1px solid var(--red-pill);font-size:13px;display:none}
@@ -106,6 +110,15 @@
     details.help{margin-top:20px;font-size:13px;color:var(--muted)}
     details.help summary{cursor:pointer;font-weight:600;color:var(--text)}
     details.help pre{background:#f1f5f9;padding:12px;border-radius:10px;overflow:auto;font-size:12px;margin-top:8px}
+    .viewer-wrap{position:relative}
+    .inline-detail{position:absolute;inset:0;background:#fff;border:1px solid var(--border);border-radius:24px;box-shadow:var(--shadow);z-index:5;overflow:hidden}
+    .inline-detail .modal-scroll{max-height:calc(100vh - 250px)}
+    .claim-highlight.checked{opacity:.45}
+    .viewer-actions{display:flex;gap:10px;flex-wrap:wrap;margin:0 0 18px}
+    @media (max-width: 980px){
+      .inline-detail{position:fixed;left:16px;right:16px;top:16px;bottom:16px;border-radius:20px}
+      .inline-detail .modal-scroll{max-height:none;height:calc(100% - 72px)}
+    }
   </style>
 </head>
 <body>
@@ -118,6 +131,59 @@
   <script>
     /* ---------- Loader: parse a pasted/uploaded factCheckDocument ---------- */
     (function loaderInit() {
+      const SUGGESTED_PROMPT_URL = "https://docs.google.com";
+      const exampleDocument = {
+        title: "Example fact-check document",
+        subtitle: "Demo content to preview the interface",
+        description: "Use this sample to explore highlights, claims, and sources.",
+        passageHeading: "Original passage",
+        claimsHeading: "Claims index",
+        passage: "A short example passage.",
+        segments: [
+          { text: "City records show that " },
+          { text: "the bridge opened in 2018", claimIds: ["C1"], verdict: "green" },
+          { text: ", while officials said " },
+          { text: "it came in under budget", claimIds: ["C2"], verdict: "yellow" },
+          { text: ". The speech also claimed that " },
+          { text: "ridership doubled in the first year", claimIds: ["C3"], verdict: "red" },
+          { text: "." }
+        ],
+        claims: [
+          {
+            id: "C1",
+            claim: "The bridge opened in 2018.",
+            verdict: "green",
+            check: "Construction and opening records confirm a 2018 opening date.",
+            sourceQuote: "Public records list the opening ceremony in September 2018.",
+            snippet: "the bridge opened in 2018",
+            sources: [{ title: "Example city release", url: "https://example.com/source-1" }]
+          },
+          {
+            id: "C2",
+            claim: "The bridge came in under budget.",
+            verdict: "yellow",
+            check: "Available reports show mixed estimates; final audited numbers are unclear.",
+            sourceQuote: "The final accounting is pending external audit.",
+            snippet: "it came in under budget",
+            sources: [{ title: "Example budget report", url: "https://example.com/source-2" }]
+          },
+          {
+            id: "C3",
+            claim: "Ridership doubled in the first year.",
+            verdict: "red",
+            check: "Transit statistics indicate growth, but not a doubling year-over-year.",
+            sourceQuote: "Ridership increased 32% compared to the prior year.",
+            snippet: "ridership doubled in the first year",
+            sources: [{ title: "Example transit data", url: "https://example.com/source-3" }]
+          }
+        ],
+        legend: {
+          green: "directly confirmed",
+          yellow: "check / clarification needed",
+          blue: "quote verification needed"
+        }
+      };
+
       const app = document.getElementById("app");
       const reloadBar = document.getElementById("reloadBar");
       const reloadBtn = document.getElementById("reloadBtn");
@@ -129,25 +195,21 @@
             <div class="loader-panel">
               <h1>Fact-check viewer</h1>
               <p class="sub">Load a <code>factCheckDocument</code> to view it. Your file is parsed in your browser and is never uploaded anywhere.</p>
+              <div class="top-link-wrap">
+                <a class="btn top-link-btn" href="${SUGGESTED_PROMPT_URL}" target="_blank" rel="noreferrer">Suggested fact checking prompt</a>
+              </div>
 
               <div class="privacy-note">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;margin-top:1px"><path d="M12 3l7 4v5c0 5-3.5 8.5-7 9-3.5-.5-7-4-7-9V7l7-4Z"/><path d="m9 12 2 2 4-4"/></svg>
-                <span><strong>Stays on your device.</strong> This page has no server. The file is read with the browser's FileReader API and parsed locally. Safe for embargoed material.</span>
+                <span><strong>Stays on your device.</strong> This page has no server. The file is read with the browser's FileReader API and parsed locally.</span>
               </div>
-
-              <label for="fileInput" class="drop-zone" id="dropZone">
-                <strong>Drop a file here, or click to choose</strong>
-                <span>Accepts <code>factCheckDocument.js</code> or a <code>.json</code> file</span>
-                <input id="fileInput" type="file" accept=".js,.json,application/json,text/javascript" style="display:none" />
-              </label>
-
-              <div class="or-divider">or paste below</div>
 
               <textarea id="pasteBox" class="paste-box" placeholder='Paste either:&#10;&#10;  window.factCheckDocument = { "title": "...", "claims": [...] };&#10;&#10;or just the JSON object:&#10;&#10;  { "title": "...", "claims": [...] }'></textarea>
 
               <div class="actions-row">
                 <button id="loadBtn" class="btn btn-primary">Load document</button>
                 <button id="clearBtn" class="btn">Clear</button>
+                <button id="exampleBtn" class="btn btn-gray">Example document</button>
               </div>
 
               <div id="err" class="err"></div>
@@ -174,11 +236,10 @@
           </div>
         `;
 
-        const fileInput = document.getElementById("fileInput");
-        const dropZone = document.getElementById("dropZone");
         const pasteBox = document.getElementById("pasteBox");
         const loadBtn = document.getElementById("loadBtn");
         const clearBtn = document.getElementById("clearBtn");
+        const exampleBtn = document.getElementById("exampleBtn");
         const errEl = document.getElementById("err");
 
         function showError(msg) {
@@ -229,33 +290,18 @@
           bootViewer();
         }
 
-        function readFile(file) {
-          if (!file) return;
-          const reader = new FileReader();
-          reader.onload = () => parseAndBoot(String(reader.result || ""));
-          reader.onerror = () => showError("Could not read the file.");
-          reader.readAsText(file);
-        }
-
         loadBtn.addEventListener("click", () => {
           const text = pasteBox.value.trim();
-          if (!text) { showError("Paste your factCheckDocument first, or choose a file."); return; }
+          if (!text) { showError("Paste your factCheckDocument first."); return; }
           parseAndBoot(text);
         });
         clearBtn.addEventListener("click", () => { pasteBox.value = ""; clearError(); });
-
-        fileInput.addEventListener("change", (e) => readFile(e.target.files[0]));
-
-        ["dragenter","dragover"].forEach(ev => dropZone.addEventListener(ev, (e) => {
-          e.preventDefault(); e.stopPropagation(); dropZone.classList.add("dragover");
-        }));
-        ["dragleave","drop"].forEach(ev => dropZone.addEventListener(ev, (e) => {
-          e.preventDefault(); e.stopPropagation(); dropZone.classList.remove("dragover");
-        }));
-        dropZone.addEventListener("drop", (e) => {
-          const file = e.dataTransfer.files && e.dataTransfer.files[0];
-          if (file) readFile(file);
+        exampleBtn.addEventListener("click", () => {
+          pasteBox.value = JSON.stringify(exampleDocument, null, 2);
+          clearError();
+          parseAndBoot(pasteBox.value);
         });
+
       }
 
       reloadBtn.addEventListener("click", () => {
@@ -300,6 +346,8 @@
         query: "",
         selectedIds: null,
         activeId: null,
+        checkedIds: new Set(),
+        splitLeft: Number(localStorage.getItem("factcheck_split_left_pct")) || 63,
       };
 
       function esc(s) {
@@ -376,8 +424,12 @@
               </div>
             </div>
 
-            <div class="layout">
+            <div class="layout viewer-wrap">
               <section class="panel section">
+                <div class="viewer-actions">
+                  <button id="resetFactCheckBtn" class="btn">Reset fact check</button>
+                  <button id="newFactCheckBtn" class="btn">New fact check</button>
+                </div>
                 <h2>${esc(doc.passageHeading || "Original passage")}</h2>
                 <p class="section-note">The prose remains continuous; only the claim-bearing language is color-coded.</p>
                 <div class="passage-box" style="margin-top:20px">
@@ -385,11 +437,13 @@
                     ${(doc.segments || []).map((segment, idx) => {
                       if (!segment.claimIds || !segment.verdict) return esc(segment.text);
                       const title = segment.claimIds.map(id => `#${id}: ${cm[id]?.claim || ""}`).join("\\n\\n");
-                      return `<button class="claim-highlight" data-claim-ids="${segment.claimIds.join(",")}" title="${esc(title)}" style="${verdictStyles[segment.verdict].bg}">${esc(segment.text)}</button>`;
+                      const checkedClass = segment.claimIds.some(id => state.checkedIds.has(id)) ? " checked" : "";
+                      return `<button class="claim-highlight${checkedClass}" data-claim-ids="${segment.claimIds.join(",")}" title="${esc(title)}" style="${verdictStyles[segment.verdict].bg}">${esc(segment.text)}</button>`;
                     }).join("")}
                   </p>
                 </div>
               </section>
+              <div id="layoutSplitter" class="splitter" role="separator" aria-label="Resize passage and claims panels" aria-orientation="vertical" aria-valuemin="45" aria-valuemax="75" aria-valuenow="${Math.round(state.splitLeft)}" tabindex="0"></div>
 
               <aside class="panel section">
                 <h2>${esc(doc.claimsHeading || "Claims index")}</h2>
@@ -420,6 +474,14 @@
           state.query = e.target.value;
           render();
         });
+        document.getElementById("resetFactCheckBtn").addEventListener("click", () => {
+          state.checkedIds.clear();
+          closeModal();
+        });
+        document.getElementById("newFactCheckBtn").addEventListener("click", () => {
+          window.factCheckDocument = null;
+          if (window.__showLoader) window.__showLoader();
+        });
 
         app.querySelectorAll("[data-open-claim]").forEach(el => {
           el.addEventListener("click", () => openClaims([el.getAttribute("data-open-claim")]));
@@ -428,12 +490,50 @@
           el.addEventListener("click", () => openClaims(el.getAttribute("data-claim-ids").split(",")));
         });
 
+        attachSplitter();
         renderModal();
+      }
+
+      function attachSplitter() {
+        const layout = app.querySelector(".layout");
+        const splitter = document.getElementById("layoutSplitter");
+        if (!layout || !splitter || window.innerWidth <= 980) return;
+        const min = 45;
+        const max = 75;
+        const setSplit = (pct) => {
+          const clamped = Math.max(min, Math.min(max, pct));
+          state.splitLeft = clamped;
+          layout.style.setProperty("--split-left", `${clamped}%`);
+          splitter.setAttribute("aria-valuenow", String(Math.round(clamped)));
+          localStorage.setItem("factcheck_split_left_pct", String(clamped));
+        };
+        setSplit(state.splitLeft);
+        const onPointerMove = (e) => {
+          const rect = layout.getBoundingClientRect();
+          if (!rect.width) return;
+          setSplit(((e.clientX - rect.left) / rect.width) * 100);
+        };
+        splitter.addEventListener("pointerdown", (e) => {
+          e.preventDefault();
+          splitter.classList.add("dragging");
+          splitter.setPointerCapture(e.pointerId);
+          splitter.addEventListener("pointermove", onPointerMove);
+        });
+        splitter.addEventListener("pointerup", (e) => {
+          splitter.classList.remove("dragging");
+          splitter.releasePointerCapture(e.pointerId);
+          splitter.removeEventListener("pointermove", onPointerMove);
+        });
+        splitter.addEventListener("keydown", (e) => {
+          if (e.key === "ArrowLeft") setSplit(state.splitLeft - 1.5);
+          if (e.key === "ArrowRight") setSplit(state.splitLeft + 1.5);
+        });
       }
 
       function openClaims(ids) {
         state.selectedIds = ids;
         state.activeId = ids[0];
+        ids.forEach(id => state.checkedIds.add(id));
         render();
       }
 
@@ -455,9 +555,14 @@
           return;
         }
 
-        overlay.className = "overlay open";
-        overlay.innerHTML = `
-          <div class="modal" role="dialog" aria-modal="true" aria-label="Claim detail">
+        overlay.className = "overlay";
+        const asideSection = app.querySelector(".layout aside.section");
+        if (!asideSection) return;
+        asideSection.style.position = "relative";
+        const existing = asideSection.querySelector(".inline-detail");
+        if (existing) existing.remove();
+        asideSection.insertAdjacentHTML("beforeend", `
+          <div class="inline-detail" role="dialog" aria-modal="false" aria-label="Claim detail">
             <div class="modal-header">
               <div>
                 <div class="header-row">${pill(activeClaim.verdict)} <span class="muted" style="font-size:14px;font-weight:600">Claim ${esc(activeClaim.id)}</span></div>
@@ -509,13 +614,10 @@
               </div>
             </div>
           </div>
-        `;
+        `);
 
-        overlay.onclick = (e) => {
-          if (e.target === overlay) closeModal();
-        };
         document.getElementById("closeModal").onclick = closeModal;
-        overlay.querySelectorAll("[data-tab-id]").forEach(el => {
+        asideSection.querySelectorAll("[data-tab-id]").forEach(el => {
           el.addEventListener("click", () => {
             state.activeId = el.getAttribute("data-tab-id");
             renderModal();
