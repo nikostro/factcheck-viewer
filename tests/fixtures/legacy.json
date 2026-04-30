@@ -1,0 +1,25 @@
+{
+  "title": "Legacy doc fixture",
+  "claims": [
+    {
+      "id": "L1",
+      "claim": "Legacy claim with quote-less sources.",
+      "verdict": "yellow",
+      "snippet": "legacy claim",
+      "check": "Tests the back-compat path.",
+      "sourceQuote": "Legacy top-level quote text.",
+      "sources": [
+        { "title": "Legacy source A", "url": "https://example.com/legacy-a" },
+        { "title": "Legacy source B", "url": "https://example.com/legacy-b" }
+      ]
+    },
+    {
+      "id": "L2",
+      "claim": "Claim with no sources at all.",
+      "verdict": "blue",
+      "snippet": "no sources",
+      "check": "Should render the empty placeholder.",
+      "sources": []
+    }
+  ]
+}

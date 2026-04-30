@@ -69,6 +69,20 @@ Anything else is rendered as plain text. Convention:
 
 Just open `index.html` in a browser. No build step, no dependencies.
 
+## Development
+
+Tests run in headless Chromium via Playwright. From a clean clone:
+
+    npm install
+    npx playwright install --with-deps chromium
+    npm test
+
+`npm run test:ui` opens Playwright's debug UI for iterating on a single spec.
+
+CI runs the suite on every push and pull request. The GitHub Pages deploy is gated on tests passing for `main` — a red `main` will not be served.
+
+**One-time repo setting**: under *Settings → Pages*, set *Source* to **GitHub Actions** (not "Deploy from a branch"). Without this, Pages will keep auto-deploying from `main` regardless of test status.
+
 ## Security note
 
 The paste/upload feature parses input as either JSON (preferred) or, as a fallback, executes it as JavaScript inside an isolated `Function` scope. Because the JS fallback runs code, **only paste files you trust** — i.e. ones you generated yourself or got from a trusted source. There's no way for the file to phone home from this page (no network calls are made), but malicious JS could still mess with the page you're looking at.

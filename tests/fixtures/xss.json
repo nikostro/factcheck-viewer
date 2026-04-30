@@ -1,0 +1,14 @@
+{
+  "title": "XSS containment fixture",
+  "claims": [
+    {
+      "id": "X1",
+      "claim": "Malicious markdown should not execute.",
+      "verdict": "red",
+      "snippet": "x",
+      "check": "Hostile string smuggled into correction.",
+      "correction": "<script>window.__pwned = 1</script> [evil](javascript:alert(1)) ~bad~ *fixed* <img src=x onerror=\"window.__pwned2 = 1\">",
+      "sources": []
+    }
+  ]
+}

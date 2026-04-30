@@ -1,0 +1,13 @@
+{
+  "name": "factcheck-viewer",
+  "private": true,
+  "scripts": {
+    "test": "playwright test",
+    "test:ui": "playwright test --ui",
+    "serve": "http-server . -p 4173 -s -c-1"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.56.0",
+    "http-server": "^14.1.1"
+  }
+}
