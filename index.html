@@ -63,13 +63,14 @@
     .overlay{position:fixed;inset:0;background:rgba(15,23,42,.5);backdrop-filter:blur(4px);display:none;align-items:center;justify-content:center;padding:16px;z-index:50}
     .overlay.open{display:flex}
     .modal{width:min(100%,1024px);max-height:88vh;overflow:hidden;background:#fff;border:1px solid var(--border);border-radius:30px;box-shadow:0 24px 80px rgba(15,23,42,.25)}
-    .modal-header{display:flex;justify-content:space-between;gap:16px;padding:20px 24px;border-bottom:1px solid #f1f5f9}
+    .modal-header{display:flex;justify-content:space-between;gap:16px;padding:20px 24px;border-bottom:1px solid #f1f5f9;flex-shrink:0}
     .close-btn{border:1px solid var(--border);background:#fff;border-radius:999px;padding:10px;cursor:pointer}
     .close-btn:hover{background:#f8fafc}
-    .tabs{padding:12px 24px;border-bottom:1px solid #f1f5f9;display:flex;gap:8px;flex-wrap:wrap}
+    .tabs{padding:12px 24px;border-bottom:1px solid #f1f5f9;display:flex;gap:8px;flex-wrap:wrap;flex-shrink:0}
     .tab{border:1px solid var(--border);background:#fff;border-radius:999px;padding:8px 12px;font-size:12px;font-weight:700;cursor:pointer}
     .modal-scroll{overflow:auto;max-height:70vh;padding:24px}
-    .modal-grid{display:grid;grid-template-columns:1.05fr .95fr;gap:20px}
+    .modal-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:20px}
+    .modal-grid > *{min-width:0}
     .card{border:1px solid var(--border);border-radius:24px;padding:20px;background:#fff}
     .card.soft{background:#f8fafc}
     .label{margin-bottom:8px;font-size:11px;font-weight:800;letter-spacing:.18em;text-transform:uppercase;color:var(--muted)}
@@ -77,10 +78,10 @@
     .source-quotes{display:flex;flex-direction:column;gap:10px}
     .source-quote-card{border:1px solid var(--border);background:#f8fafc;border-radius:18px;padding:14px 16px;display:flex;flex-direction:column;gap:10px}
     .source-quote-card:hover{background:#fff}
-    .source-quote-card blockquote{margin:0;border-left:4px solid #e2e8f0;padding-left:14px;font-size:14px;line-height:1.7;white-space:pre-wrap;color:#1f2937}
+    .source-quote-card blockquote{margin:0;border-left:4px solid #e2e8f0;padding-left:14px;font-size:14px;line-height:1.7;white-space:pre-wrap;overflow-wrap:anywhere;color:#1f2937}
     .source-quote-foot{display:flex;align-items:center;justify-content:space-between;gap:12px}
     .source-quote-link{display:flex;align-items:center;gap:8px;text-decoration:none;color:inherit;font-weight:500;flex:1;min-width:0}
-    .source-quote-link span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .source-quote-link span{overflow-wrap:anywhere;word-break:break-word}
     .source-quote-link:hover{color:#1d4ed8}
     .copy-url-btn{background:transparent;border:1px solid var(--border);border-radius:8px;padding:6px;cursor:pointer;color:var(--muted);display:inline-flex;align-items:center;justify-content:center;flex-shrink:0}
     .copy-url-btn:hover{background:#fff;color:#111827}
@@ -130,27 +131,21 @@
     .actions-row{display:flex;gap:10px;margin-top:16px;flex-wrap:wrap}
     .err{margin-top:14px;padding:12px 14px;border-radius:12px;background:var(--red-soft);color:var(--red-text);border:1px solid var(--red-pill);font-size:13px;display:none}
     .err.show{display:block}
-    .reload-bar{position:fixed;bottom:20px;right:20px;z-index:10}
-    .reload-bar .btn{box-shadow:var(--shadow)}
     details.help{margin-top:20px;font-size:13px;color:var(--muted)}
     details.help summary{cursor:pointer;font-weight:600;color:var(--text)}
     details.help pre{background:#f1f5f9;padding:12px;border-radius:10px;overflow:auto;font-size:12px;margin-top:8px}
     .viewer-wrap{position:relative}
-    .inline-detail{position:absolute;inset:0;background:#fff;border:1px solid var(--border);border-radius:24px;box-shadow:var(--shadow);z-index:5;overflow:hidden}
-    .inline-detail .modal-scroll{max-height:calc(100vh - 250px)}
+    .inline-detail{position:absolute;inset:0;background:#fff;border:1px solid var(--border);border-radius:24px;box-shadow:var(--shadow);z-index:5;overflow:hidden;display:flex;flex-direction:column}
+    .inline-detail .modal-scroll{flex:1 1 0;min-height:0;max-height:none}
     .claim-highlight.checked{opacity:.45}
     @media (max-width: 980px){
       .inline-detail{position:fixed;left:16px;right:16px;top:16px;bottom:16px;border-radius:20px}
-      .inline-detail .modal-scroll{max-height:none;height:calc(100% - 72px)}
     }
   </style>
 </head>
 <body>
   <div id="app"></div>
   <div id="overlay" class="overlay" aria-hidden="true"></div>
-  <div id="reloadBar" class="reload-bar" style="display:none">
-    <button id="reloadBtn" class="btn">Load different document</button>
-  </div>
 
   <script>
     /* ---------- Loader: parse a pasted/uploaded factCheckDocument ---------- */
@@ -217,11 +212,8 @@
       };
 
       const app = document.getElementById("app");
-      const reloadBar = document.getElementById("reloadBar");
-      const reloadBtn = document.getElementById("reloadBtn");
 
       function showLoader() {
-        reloadBar.style.display = "none";
         app.innerHTML = `
           <div class="loader-wrap">
             <div class="loader-panel">
@@ -367,12 +359,6 @@
         });
       }
 
-      reloadBtn.addEventListener("click", () => {
-        window.factCheckDocument = null;
-        if (location.hash) history.replaceState(null, "", location.pathname + location.search);
-        showLoader();
-      });
-
       function loadFromHash() {
         const hash = window.location.hash || "";
         const m = hash.match(/(?:^#|[#&])data_b64=([^&]+)/);
@@ -420,13 +406,11 @@
       const doc = window.factCheckDocument;
       const app = document.getElementById("app");
       const overlay = document.getElementById("overlay");
-      const reloadBar = document.getElementById("reloadBar");
 
       if (!doc) {
         if (window.__showLoader) window.__showLoader();
         return;
       }
-      reloadBar.style.display = "block";
 
       const verdictStyles = {
         green: { pill: "background:var(--green-pill);color:var(--green-text);border-color:#a7f3d0", bg: "background:var(--green-bg);color:var(--green-text)", soft: "background:var(--green-soft);color:var(--green-text)" },
@@ -640,6 +624,7 @@
         });
         document.getElementById("newFactCheckBtn").addEventListener("click", () => {
           window.factCheckDocument = null;
+          if (location.hash) history.replaceState(null, "", location.pathname + location.search);
           if (window.__showLoader) window.__showLoader();
         });
 

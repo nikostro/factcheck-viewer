@@ -40,10 +40,10 @@ test.describe("hash loader", () => {
     await expect(page.locator("#err")).toContainText(/claims/i);
   });
 
-  test("'Load different document' clears the hash and refresh stays on loader", async ({ page }) => {
+  test("'New fact check' clears the hash and refresh stays on loader", async ({ page }) => {
     await page.goto(fixtureHashUrl("canonical"));
     await expect(page.locator("#pasteBox")).toHaveCount(0);
-    await page.locator("#reloadBtn").click();
+    await page.locator("#newFactCheckBtn").click();
     await expect(page.locator("#pasteBox")).toBeVisible();
     expect(page.url()).not.toContain("#data_b64");
     await page.reload();
