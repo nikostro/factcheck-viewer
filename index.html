@@ -80,6 +80,13 @@
     .source-link{display:flex;justify-content:space-between;gap:12px;align-items:center;text-decoration:none;color:inherit;border:1px solid var(--border);background:#f8fafc;border-radius:18px;padding:14px 16px}
     .source-link:hover{background:#fff}
     .empty{border:1px dashed var(--border);background:#f8fafc;border-radius:18px;padding:16px;color:var(--muted);font-size:14px;line-height:1.6}
+    .correction-box{border:1px solid #fcd34d;background:#fef3c7;border-left:4px solid #f59e0b;border-radius:18px;padding:14px 16px;font-size:14px;line-height:1.6}
+    .correction-box .correction-label{font-size:11px;font-weight:800;letter-spacing:.18em;text-transform:uppercase;color:#92400e;margin-bottom:8px}
+    .correction-box .correction-body{color:#1f2937;line-height:1.7}
+    .correction-box s{color:#6b7280}
+    .correction-box strong{color:#111827;font-weight:700}
+    .correction-box a{color:#1d4ed8;text-decoration:underline}
+    .correction-box a:hover{color:#1e3a8a}
     .icon{width:18px;height:18px;display:inline-block;vertical-align:middle}
     .icon-sm{width:16px;height:16px}
     .header-row{display:flex;align-items:center;gap:12px;margin-bottom:8px}
@@ -176,6 +183,7 @@
             check: "Available reports show mixed estimates; final audited numbers are unclear.",
             sourceQuote: "The final accounting is pending external audit.",
             snippet: "it came in under budget",
+            correction: "~came in under budget~ *final cost is still pending audit* -- public reports do not yet confirm the final number [Example budget report](https://example.com/source-2)",
             sources: [{ title: "Example budget report", url: "https://example.com/source-2" }]
           },
           {
@@ -185,6 +193,7 @@
             check: "Transit statistics indicate growth, but not a doubling year-over-year.",
             sourceQuote: "Ridership increased 32% compared to the prior year.",
             snippet: "ridership doubled in the first year",
+            correction: "~doubled~ *grew about 32%* in the first year -- transit data shows a 32% rise, not a doubling [Example transit data](https://example.com/source-3)",
             sources: [{ title: "Example transit data", url: "https://example.com/source-3" }]
           }
         ],
@@ -422,6 +431,16 @@
 
       function esc(s) {
         return String(s ?? "").replace(/[&<>"']/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
+      }
+
+      function renderCorrection(md) {
+        let s = esc(md);
+        s = s.replace(/\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)/g,
+          (_, label, url) => '<a href="' + url + '" target="_blank" rel="noopener noreferrer">' + label + '</a>');
+        s = s.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
+        s = s.replace(/\*([^*]+)\*/g, "<strong>$1</strong>");
+        s = s.replace(/~([^~]+)~/g, "<s>$1</s>");
+        return s;
       }
 
       function iconExternal() {
@@ -706,6 +725,12 @@
                     <div class="label">${iconHelp()} Check</div>
                     <div style="font-size:14px;line-height:1.8">${esc(activeClaim.check)}</div>
                   </div>
+
+                  ${activeClaim.correction ? `
+                    <div class="correction-box">
+                      <div class="correction-label">Proposed correction</div>
+                      <div class="correction-body">${renderCorrection(activeClaim.correction)}</div>
+                    </div>` : ""}
                 </div>
 
                 <div style="display:flex;flex-direction:column;gap:20px">

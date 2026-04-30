@@ -31,13 +31,28 @@ window.factCheckDocument = {
       "check": "What I found when checking it",
       "snippet": "exact passage text to highlight",
       "sourceQuote": "...",
-      "sources": [{ "title": "NYT", "url": "https://..." }]
+      "sources": [{ "title": "NYT", "url": "https://..." }],
+      "correction": "~wrong text~ *corrected text* -- short justification [source](https://...)"
     }
   ]
 }
 ```
 
 A pure JSON object (without the `window.factCheckDocument =` wrapper) also works.
+
+### Proposed corrections
+
+For yellow/red claims you can include a `correction` string. It renders inside an amber "Proposed correction" box on the claim card. The viewer parses a tiny markdown subset:
+
+- `~text~` → strikethrough (the wrong wording)
+- `*text*` or `**text**` → bold (the corrected wording)
+- `[label](url)` → external link (only `http://` / `https://` URLs are linked)
+
+Anything else is rendered as plain text. Convention:
+
+```
+~wrong~ *updated* [optional surrounding context] -- short justification [source label](url)
+```
 
 ## Running locally
 
