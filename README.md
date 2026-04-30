@@ -2,7 +2,7 @@
 
 A standalone, single-file viewer for sentence-by-sentence fact-check documents. Paste or drop in a `factCheckDocument.js` (or `.json`) file and the viewer renders it.
 
-**Everything stays in your browser.** There is no server. The file is parsed locally with the browser's `FileReader` API, so it's safe to use with embargoed material.
+**Everything stays in your browser.** There is no server. The file is parsed locally with the browser's `FileReader` API (or, for shared links, decoded from the URL fragment), so it's safe to use with embargoed material.
 
 ## Use it
 
@@ -10,8 +10,9 @@ Open the hosted page (see below) and either:
 
 - **Drop a file** — drag your `factCheckDocument.js` or a `.json` file onto the drop zone.
 - **Paste** — paste the contents of either format into the textarea and click **Load document**.
+- **Share via URL** — append `#data_b64=<base64-utf8-json>` to the page URL. The viewer decodes the fragment locally and boots straight into the document. Browsers never send fragments to the server, so the payload stays client-side. Both standard and URL-safe base64 are accepted.
 
-To swap to a different document, click **Load different document** in the bottom-right corner.
+To swap to a different document, click **Load different document** in the bottom-right corner. This also clears any `#data_b64` from the URL.
 
 ## Document format
 

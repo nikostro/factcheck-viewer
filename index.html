@@ -311,6 +311,26 @@
           bootViewer();
         }
 
+        function loadFromHash() {
+          const hash = window.location.hash || "";
+          const m = hash.match(/(?:^#|[#&])data_b64=([^&]+)/);
+          if (!m) return { handled: false };
+          try {
+            let b64 = decodeURIComponent(m[1]).replace(/-/g, "+").replace(/_/g, "/");
+            while (b64.length % 4) b64 += "=";
+            const bin = atob(b64);
+            const bytes = Uint8Array.from(bin, c => c.charCodeAt(0));
+            const data = JSON.parse(new TextDecoder("utf-8").decode(bytes));
+            if (!data || typeof data !== "object") throw new Error("not an object");
+            if (!Array.isArray(data.claims)) throw new Error("missing 'claims' array");
+            window.factCheckDocument = data;
+            bootViewer();
+            return { handled: true, ok: true };
+          } catch (e) {
+            return { handled: true, ok: false, error: e.message };
+          }
+        }
+
         function readFile(file) {
           if (!file) return;
           const reader = new FileReader();
@@ -348,6 +368,7 @@
 
       reloadBtn.addEventListener("click", () => {
         window.factCheckDocument = null;
+        if (location.hash) history.replaceState(null, "", location.pathname + location.search);
         showLoader();
       });
 
@@ -356,10 +377,16 @@
       window.__bootViewer = bootViewer;
       window.__showLoader = showLoader;
 
-      if (window.factCheckDocument) {
+      const hashResult = loadFromHash();
+      if (hashResult.handled && hashResult.ok) {
+        // booted via hash
+      } else if (window.factCheckDocument) {
         bootViewer();
       } else {
         showLoader();
+        if (hashResult.handled && !hashResult.ok) {
+          showError("Could not load document from URL: " + hashResult.error);
+        }
       }
     })();
 
