@@ -12,7 +12,7 @@ Open the hosted page (see below) and either:
 - **Paste** — paste the contents of either format into the textarea and click **Load document**.
 - **Share via URL** — append `#data_b64=<base64-utf8-json>` to the page URL. The viewer decodes the fragment locally and boots straight into the document. Browsers never send fragments to the server, so the payload stays client-side. Both standard and URL-safe base64 are accepted.
 
-To swap to a different document, click **Load different document** in the bottom-right corner. This also clears any `#data_b64` from the URL.
+To swap to a different document, click **New fact check** at the bottom of the passage pane. This also clears any `#data_b64` from the URL.
 
 ## Document format
 
@@ -47,9 +47,9 @@ A pure JSON object (without the `window.factCheckDocument =` wrapper) also works
 
 ### Source quotes
 
-Each entry in `sources` can carry an optional `quote` string — the substantiating excerpt from that source. The viewer renders one card per source containing the quote (if present), the source title (clickable, opens the URL in a new tab), and a small copy-icon button that copies the URL to the clipboard.
+Each entry in `sources` should carry a `quote` — the substantiating excerpt from that source. The viewer renders one card per source: clicking anywhere on the card opens the URL in a new tab, the small copy-icon button copies the URL to the clipboard. Sources without a `quote` still render as link-only cards.
 
-For backwards compatibility, the older top-level `sourceQuote` field is still accepted and renders as a quote-only card at the top of the list when no `sources[].quote` is provided.
+> **Note**: the older top-level `sourceQuote` field on the claim is no longer rendered. Put each quote on its corresponding source instead.
 
 ### Proposed corrections
 
@@ -64,6 +64,8 @@ Anything else is rendered as plain text. Convention:
 ```
 ~wrong~ *updated* [optional surrounding context] -- short justification [source label](url)
 ```
+
+The **Copy correction** button writes both rich HTML and plain markdown to the clipboard. Pasting into Google Docs, Gmail, or Slack preserves the strikethrough, bold, and hyperlinks; pasting into a plain-text editor gets the raw markdown.
 
 ## Running locally
 

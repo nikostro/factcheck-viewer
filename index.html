@@ -76,13 +76,14 @@
     .label{margin-bottom:8px;font-size:11px;font-weight:800;letter-spacing:.18em;text-transform:uppercase;color:var(--muted)}
     blockquote{margin:0;border-left:4px solid #e2e8f0;padding-left:16px;white-space:pre-wrap;font-size:14px;line-height:1.8}
     .source-quotes{display:flex;flex-direction:column;gap:10px}
-    .source-quote-card{border:1px solid var(--border);background:#f8fafc;border-radius:18px;padding:14px 16px;display:flex;flex-direction:column;gap:10px}
-    .source-quote-card:hover{background:#fff}
+    .source-quote-card{border:1px solid var(--border);background:#f8fafc;border-radius:18px;padding:14px 16px;display:flex;flex-direction:column;gap:10px;cursor:pointer;transition:.15s}
+    .source-quote-card:hover{background:#fff;border-color:#94a3b8}
+    .source-quote-card:focus-visible{outline:2px solid #1d4ed8;outline-offset:2px}
     .source-quote-card blockquote{margin:0;border-left:4px solid #e2e8f0;padding-left:14px;font-size:14px;line-height:1.7;white-space:pre-wrap;overflow-wrap:anywhere;color:#1f2937}
-    .source-quote-foot{display:flex;align-items:center;justify-content:space-between;gap:12px}
-    .source-quote-link{display:flex;align-items:center;gap:8px;text-decoration:none;color:inherit;font-weight:500;flex:1;min-width:0}
-    .source-quote-link span{overflow-wrap:anywhere;word-break:break-word}
-    .source-quote-link:hover{color:#1d4ed8}
+    .source-quote-foot{display:flex;align-items:center;justify-content:space-between;gap:12px;color:var(--muted);font-size:13px}
+    .source-quote-title{font-weight:500;color:inherit;flex:1;min-width:0;overflow-wrap:anywhere;word-break:break-word}
+    .source-quote-card:hover .source-quote-title{color:#1d4ed8}
+    .source-quote-icons{display:inline-flex;align-items:center;gap:8px;flex-shrink:0;color:var(--muted)}
     .copy-url-btn{background:transparent;border:1px solid var(--border);border-radius:8px;padding:6px;cursor:pointer;color:var(--muted);display:inline-flex;align-items:center;justify-content:center;flex-shrink:0}
     .copy-url-btn:hover{background:#fff;color:#111827}
     .copy-url-btn.copied{color:#16a34a;border-color:#16a34a}
@@ -198,10 +199,13 @@
             claim: "Ridership doubled in the first year.",
             verdict: "red",
             check: "Transit statistics indicate growth, but not a doubling year-over-year.",
-            sourceQuote: "Ridership increased 32% compared to the prior year.",
             snippet: "ridership doubled in the first year",
             correction: "~doubled~ *grew about 32%* in the first year -- transit data shows a 32% rise, not a doubling [Example transit data](https://example.com/source-3)",
-            sources: [{ title: "Example transit data", url: "https://example.com/source-3" }]
+            sources: [{
+              title: "Example transit data",
+              url: "https://example.com/source-3",
+              quote: "Ridership increased 32% compared to the prior year."
+            }]
           }
         ],
         legend: {
@@ -442,6 +446,20 @@
         return s;
       }
 
+      async function copyRichText(html, plain) {
+        if (html && typeof ClipboardItem !== "undefined" && navigator.clipboard && navigator.clipboard.write) {
+          try {
+            const item = new ClipboardItem({
+              "text/html": new Blob([html], { type: "text/html" }),
+              "text/plain": new Blob([plain], { type: "text/plain" }),
+            });
+            await navigator.clipboard.write([item]);
+            return;
+          } catch (_) { /* fall through to plain text */ }
+        }
+        await navigator.clipboard.writeText(plain);
+      }
+
       function iconExternal() {
         return '<svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></svg>';
       }
@@ -463,38 +481,29 @@
 
       function renderSourceQuotes(claim) {
         const sources = Array.isArray(claim.sources) ? claim.sources : [];
-        const anyQuotes = sources.some(s => s && s.quote);
-        const legacyQuote = !anyQuotes && claim.sourceQuote ? String(claim.sourceQuote) : "";
-        if (!sources.length && !legacyQuote) {
+        const usable = sources.filter(s => s && s.url);
+        if (!usable.length) {
           return '<div class="empty">No directly linkable public source was located for this exact claim.</div>';
         }
-        const cards = [];
-        if (legacyQuote) {
-          cards.push(
-            '<div class="source-quote-card">' +
-              '<blockquote>' + esc(legacyQuote) + '</blockquote>' +
-            '</div>'
-          );
-        }
-        for (const s of sources) {
-          if (!s || !s.url) continue;
+        const cards = usable.map(s => {
           const url = esc(s.url);
           const title = esc(s.title || s.url);
           const quote = s.quote ? '<blockquote>' + esc(s.quote) + '</blockquote>' : "";
-          cards.push(
-            '<div class="source-quote-card">' +
+          return (
+            '<div class="source-quote-card" role="link" tabindex="0" data-source-url="' + url + '">' +
               quote +
               '<div class="source-quote-foot">' +
-                '<a class="source-quote-link" href="' + url + '" target="_blank" rel="noreferrer">' +
-                  '<span>' + title + '</span>' + iconExternal() +
-                '</a>' +
-                '<button class="copy-url-btn" data-copy-url="' + url + '" title="Copy URL" aria-label="Copy URL">' +
-                  iconCopy() +
-                '</button>' +
+                '<span class="source-quote-title">' + title + '</span>' +
+                '<span class="source-quote-icons">' +
+                  iconExternal() +
+                  '<button class="copy-url-btn" data-copy-url="' + url + '" title="Copy URL" aria-label="Copy URL">' +
+                    iconCopy() +
+                  '</button>' +
+                '</span>' +
               '</div>' +
             '</div>'
           );
-        }
+        });
         return '<div class="source-quotes">' + cards.join("") + '</div>';
       }
 
@@ -772,14 +781,34 @@
           });
         });
 
+        asideSection.querySelectorAll(".source-quote-card").forEach(card => {
+          const open = () => {
+            const url = card.getAttribute("data-source-url");
+            if (url) window.open(url, "_blank", "noopener,noreferrer");
+          };
+          card.addEventListener("click", (e) => {
+            if (e.target.closest(".copy-url-btn")) return;
+            open();
+          });
+          card.addEventListener("keydown", (e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              open();
+            }
+          });
+        });
+
         const copyCorrectionBtn = document.getElementById("copyCorrectionBtn");
         if (copyCorrectionBtn) {
           copyCorrectionBtn.addEventListener("click", async () => {
-            const text = activeClaim.correction || activeClaim.snippet || activeClaim.claim || "";
-            if (!text) return;
+            const plain = activeClaim.correction || activeClaim.snippet || activeClaim.claim || "";
+            if (!plain) return;
+            const html = activeClaim.correction
+              ? '<span>' + renderCorrection(activeClaim.correction) + '</span>'
+              : "";
             const orig = copyCorrectionBtn.textContent;
             try {
-              await navigator.clipboard.writeText(text);
+              await copyRichText(html, plain);
               copyCorrectionBtn.textContent = "Copied";
             } catch (_) {
               copyCorrectionBtn.textContent = "Copy failed";
