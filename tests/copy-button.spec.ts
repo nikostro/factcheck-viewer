@@ -8,8 +8,21 @@ async function readClipboard(page: import("@playwright/test").Page): Promise<str
   return page.evaluate(() => navigator.clipboard.readText());
 }
 
+async function readClipboardHtml(page: import("@playwright/test").Page): Promise<string> {
+  return page.evaluate(async () => {
+    const items = await navigator.clipboard.read();
+    for (const it of items) {
+      if (it.types.includes("text/html")) {
+        const blob = await it.getType("text/html");
+        return await blob.text();
+      }
+    }
+    return "";
+  });
+}
+
 test.describe("per-claim copy button", () => {
-  test("claim with correction → label is 'Copy correction', clipboard has raw markdown", async ({ page }) => {
+  test("claim with correction → clipboard has formatted HTML and raw markdown plain-text fallback", async ({ page }) => {
     await page.goto(fixtureHashUrl("canonical"));
     const fixture = loadFixture("canonical") as Doc;
     const claimWith = fixture.claims.find(c => c.correction)!;
@@ -21,8 +34,16 @@ test.describe("per-claim copy button", () => {
     await btn.click();
     await expect(btn).toContainText("Copied");
 
-    const text = await readClipboard(page);
-    expect(text).toBe(claimWith.correction);
+    // Plain-text fallback is the raw markdown — paste-targets that
+    // ignore HTML still get something useful.
+    const plain = await readClipboard(page);
+    expect(plain).toBe(claimWith.correction);
+
+    // Rich text: Google Docs / mail clients pick up the formatted HTML.
+    const html = await readClipboardHtml(page);
+    expect(html).toContain("<s>");
+    expect(html).toContain("<strong>");
+    expect(html).toMatch(/<a href="https?:\/\//);
 
     // Reverts after the timeout
     await expect(btn).toContainText("Copy correction", { timeout: 3000 });
