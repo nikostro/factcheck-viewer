@@ -50,10 +50,8 @@
     .search-icon{position:absolute;left:12px;top:50%;transform:translateY(-50%);opacity:.5}
     .claims-list{max-height:65vh;overflow:auto;padding-right:4px}
     .viewer-actions{display:flex;gap:10px;justify-content:flex-end;align-items:center;margin-top:20px;padding-top:20px;border-top:1px solid #f1f5f9;flex-wrap:wrap}
-    .flag-toggle{padding:8px 14px;font-size:13px}
-    .flag-toggle.flagged{background:#fef3c7;color:#b45309;border-color:#fcd34d}
-    .flag-toggle.flagged:hover{background:#fde68a}
-    .flag-dot{display:inline-flex;align-items:center;color:#b45309;margin-left:6px;vertical-align:-2px}
+    .copy-correction-btn{padding:8px 14px;font-size:13px}
+    .copy-correction-btn[disabled]{opacity:.6;cursor:default}
     .claim-card{width:100%;text-align:left;border:1px solid var(--border);background:#fff;border-radius:20px;padding:16px;margin-bottom:12px;cursor:pointer;transition:.15s;box-shadow:none}
     .claim-card:hover{transform:translateY(-2px);box-shadow:var(--shadow)}
     .claim-card.active{border-color:transparent;box-shadow:0 0 0 2px currentColor inset}
@@ -425,7 +423,6 @@
         selectedIds: null,
         activeId: null,
         checkedIds: new Set(),
-        flaggedIds: new Set(),
         splitPct: 50,
       };
 
@@ -460,9 +457,6 @@
       }
       function iconWarn() {
         return '<svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 2 20h20L12 3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>';
-      }
-      function iconFlag(filled) {
-        return '<svg class="icon-sm" viewBox="0 0 24 24" fill="' + (filled ? "currentColor" : "none") + '" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 21V4h13l-2 4 2 4H4"/></svg>';
       }
       function pill(verdict) {
         return '<span class="pill" style="' + verdictStyles[verdict].pill + '">' + esc(verdict) + '</span>';
@@ -537,7 +531,6 @@
                 <div class="viewer-actions">
                   <button id="resetFactCheckBtn" class="btn">Reset fact check</button>
                   <button id="newFactCheckBtn" class="btn">New fact check</button>
-                  <button id="copyFlaggedBtn" class="btn btn-primary" ${state.flaggedIds.size === 0 ? "disabled" : ""}>Copy flagged${state.flaggedIds.size ? ` (${state.flaggedIds.size})` : ""}</button>
                 </div>
               </section>
 
@@ -553,10 +546,9 @@
                 <div class="claims-list">
                   ${claims.map(claim => {
                     const active = state.activeId === claim.id && state.selectedIds && state.selectedIds.includes(claim.id);
-                    const flagged = state.flaggedIds.has(claim.id);
-                    return `<button class="claim-card${active ? " active" : ""}${flagged ? " flagged" : ""}" data-open-claim="${esc(claim.id)}" style="${active ? verdictStyles[claim.verdict].soft : ""}">
+                    return `<button class="claim-card${active ? " active" : ""}" data-open-claim="${esc(claim.id)}" style="${active ? verdictStyles[claim.verdict].soft : ""}">
                       <div class="claim-top">
-                        <div class="claim-id">Claim ${esc(claim.id)}${flagged ? ' <span class="flag-dot" title="Flagged">'+iconFlag(true)+'</span>' : ''}</div>
+                        <div class="claim-id">Claim ${esc(claim.id)}</div>
                         ${pill(claim.verdict)}
                       </div>
                       <div class="claim-text">${esc(claim.claim)}</div>
@@ -588,32 +580,12 @@
 
         document.getElementById("resetFactCheckBtn").addEventListener("click", () => {
           state.checkedIds.clear();
-          state.flaggedIds.clear();
           closeModal();
         });
         document.getElementById("newFactCheckBtn").addEventListener("click", () => {
           window.factCheckDocument = null;
           if (window.__showLoader) window.__showLoader();
         });
-
-        const copyBtn = document.getElementById("copyFlaggedBtn");
-        if (copyBtn) {
-          copyBtn.addEventListener("click", async () => {
-            const ids = Array.from(state.flaggedIds);
-            if (!ids.length) return;
-            const lines = ids.map(id => cm[id]?.snippet || cm[id]?.claim).filter(Boolean);
-            const text = lines.join("\n");
-            try {
-              await navigator.clipboard.writeText(text);
-              copyBtn.textContent = `Copied ${lines.length}`;
-              copyBtn.disabled = true;
-              setTimeout(() => render(), 1500);
-            } catch (_) {
-              copyBtn.textContent = "Copy failed";
-              setTimeout(() => render(), 1500);
-            }
-          });
-        }
 
         app.querySelectorAll("[data-open-claim]").forEach(el => {
           el.addEventListener("click", () => openClaims([el.getAttribute("data-open-claim")]));
@@ -701,9 +673,8 @@
                 <h3>${esc(activeClaim.claim)}</h3>
               </div>
               <div style="display:flex;gap:8px;align-items:center;flex-shrink:0">
-                <button class="btn flag-toggle${state.flaggedIds.has(activeClaim.id) ? " flagged" : ""}" id="flagToggleBtn" aria-pressed="${state.flaggedIds.has(activeClaim.id)}">
-                  ${iconFlag(state.flaggedIds.has(activeClaim.id))}
-                  <span>${state.flaggedIds.has(activeClaim.id) ? "Flagged" : "Flag"}</span>
+                <button class="btn btn-primary copy-correction-btn" id="copyCorrectionBtn">
+                  ${activeClaim.correction ? "Copy correction" : "Copy quote"}
                 </button>
                 <button class="close-btn" id="closeModal" aria-label="Close">✕</button>
               </div>
@@ -761,13 +732,23 @@
         `);
 
         document.getElementById("closeModal").onclick = closeModal;
-        const flagToggle = document.getElementById("flagToggleBtn");
-        if (flagToggle) {
-          flagToggle.addEventListener("click", () => {
-            const id = activeClaim.id;
-            if (state.flaggedIds.has(id)) state.flaggedIds.delete(id);
-            else state.flaggedIds.add(id);
-            render();
+        const copyCorrectionBtn = document.getElementById("copyCorrectionBtn");
+        if (copyCorrectionBtn) {
+          copyCorrectionBtn.addEventListener("click", async () => {
+            const text = activeClaim.correction || activeClaim.snippet || activeClaim.claim || "";
+            if (!text) return;
+            const orig = copyCorrectionBtn.textContent;
+            try {
+              await navigator.clipboard.writeText(text);
+              copyCorrectionBtn.textContent = "Copied";
+            } catch (_) {
+              copyCorrectionBtn.textContent = "Copy failed";
+            }
+            copyCorrectionBtn.disabled = true;
+            setTimeout(() => {
+              copyCorrectionBtn.textContent = orig;
+              copyCorrectionBtn.disabled = false;
+            }, 1500);
           });
         }
         asideSection.querySelectorAll("[data-tab-id]").forEach(el => {
