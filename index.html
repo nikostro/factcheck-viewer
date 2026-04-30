@@ -50,10 +50,8 @@
     .search-icon{position:absolute;left:12px;top:50%;transform:translateY(-50%);opacity:.5}
     .claims-list{max-height:65vh;overflow:auto;padding-right:4px}
     .viewer-actions{display:flex;gap:10px;justify-content:flex-end;align-items:center;margin-top:20px;padding-top:20px;border-top:1px solid #f1f5f9;flex-wrap:wrap}
-    .flag-toggle{padding:8px 14px;font-size:13px}
-    .flag-toggle.flagged{background:#fef3c7;color:#b45309;border-color:#fcd34d}
-    .flag-toggle.flagged:hover{background:#fde68a}
-    .flag-dot{display:inline-flex;align-items:center;color:#b45309;margin-left:6px;vertical-align:-2px}
+    .copy-correction-btn{padding:8px 14px;font-size:13px}
+    .copy-correction-btn[disabled]{opacity:.6;cursor:default}
     .claim-card{width:100%;text-align:left;border:1px solid var(--border);background:#fff;border-radius:20px;padding:16px;margin-bottom:12px;cursor:pointer;transition:.15s;box-shadow:none}
     .claim-card:hover{transform:translateY(-2px);box-shadow:var(--shadow)}
     .claim-card.active{border-color:transparent;box-shadow:0 0 0 2px currentColor inset}
@@ -76,10 +74,25 @@
     .card.soft{background:#f8fafc}
     .label{margin-bottom:8px;font-size:11px;font-weight:800;letter-spacing:.18em;text-transform:uppercase;color:var(--muted)}
     blockquote{margin:0;border-left:4px solid #e2e8f0;padding-left:16px;white-space:pre-wrap;font-size:14px;line-height:1.8}
-    .sources{display:flex;flex-direction:column;gap:8px}
-    .source-link{display:flex;justify-content:space-between;gap:12px;align-items:center;text-decoration:none;color:inherit;border:1px solid var(--border);background:#f8fafc;border-radius:18px;padding:14px 16px}
-    .source-link:hover{background:#fff}
+    .source-quotes{display:flex;flex-direction:column;gap:10px}
+    .source-quote-card{border:1px solid var(--border);background:#f8fafc;border-radius:18px;padding:14px 16px;display:flex;flex-direction:column;gap:10px}
+    .source-quote-card:hover{background:#fff}
+    .source-quote-card blockquote{margin:0;border-left:4px solid #e2e8f0;padding-left:14px;font-size:14px;line-height:1.7;white-space:pre-wrap;color:#1f2937}
+    .source-quote-foot{display:flex;align-items:center;justify-content:space-between;gap:12px}
+    .source-quote-link{display:flex;align-items:center;gap:8px;text-decoration:none;color:inherit;font-weight:500;flex:1;min-width:0}
+    .source-quote-link span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .source-quote-link:hover{color:#1d4ed8}
+    .copy-url-btn{background:transparent;border:1px solid var(--border);border-radius:8px;padding:6px;cursor:pointer;color:var(--muted);display:inline-flex;align-items:center;justify-content:center;flex-shrink:0}
+    .copy-url-btn:hover{background:#fff;color:#111827}
+    .copy-url-btn.copied{color:#16a34a;border-color:#16a34a}
     .empty{border:1px dashed var(--border);background:#f8fafc;border-radius:18px;padding:16px;color:var(--muted);font-size:14px;line-height:1.6}
+    .correction-box{border:1px solid #fcd34d;background:#fef3c7;border-left:4px solid #f59e0b;border-radius:18px;padding:14px 16px;font-size:14px;line-height:1.6}
+    .correction-box .correction-label{font-size:11px;font-weight:800;letter-spacing:.18em;text-transform:uppercase;color:#92400e;margin-bottom:8px}
+    .correction-box .correction-body{color:#1f2937;line-height:1.7}
+    .correction-box s{color:#6b7280}
+    .correction-box strong{color:#111827;font-weight:700}
+    .correction-box a{color:#1d4ed8;text-decoration:underline}
+    .correction-box a:hover{color:#1e3a8a}
     .icon{width:18px;height:18px;display:inline-block;vertical-align:middle}
     .icon-sm{width:16px;height:16px}
     .header-row{display:flex;align-items:center;gap:12px;margin-bottom:8px}
@@ -165,18 +178,25 @@
             claim: "The bridge opened in 2018.",
             verdict: "green",
             check: "Construction and opening records confirm a 2018 opening date.",
-            sourceQuote: "Public records list the opening ceremony in September 2018.",
             snippet: "the bridge opened in 2018",
-            sources: [{ title: "Example city release", url: "https://example.com/source-1" }]
+            sources: [{
+              title: "Example city release",
+              url: "https://example.com/source-1",
+              quote: "Public records list the opening ceremony in September 2018."
+            }]
           },
           {
             id: "C2",
             claim: "The bridge came in under budget.",
             verdict: "yellow",
             check: "Available reports show mixed estimates; final audited numbers are unclear.",
-            sourceQuote: "The final accounting is pending external audit.",
             snippet: "it came in under budget",
-            sources: [{ title: "Example budget report", url: "https://example.com/source-2" }]
+            correction: "~came in under budget~ *final cost is still pending audit* -- public reports do not yet confirm the final number [Example budget report](https://example.com/source-2)",
+            sources: [{
+              title: "Example budget report",
+              url: "https://example.com/source-2",
+              quote: "The final accounting is pending external audit."
+            }]
           },
           {
             id: "C3",
@@ -185,6 +205,7 @@
             check: "Transit statistics indicate growth, but not a doubling year-over-year.",
             sourceQuote: "Ridership increased 32% compared to the prior year.",
             snippet: "ridership doubled in the first year",
+            correction: "~doubled~ *grew about 32%* in the first year -- transit data shows a 32% rise, not a doubling [Example transit data](https://example.com/source-3)",
             sources: [{ title: "Example transit data", url: "https://example.com/source-3" }]
           }
         ],
@@ -311,6 +332,26 @@
           bootViewer();
         }
 
+        function loadFromHash() {
+          const hash = window.location.hash || "";
+          const m = hash.match(/(?:^#|[#&])data_b64=([^&]+)/);
+          if (!m) return { handled: false };
+          try {
+            let b64 = decodeURIComponent(m[1]).replace(/-/g, "+").replace(/_/g, "/");
+            while (b64.length % 4) b64 += "=";
+            const bin = atob(b64);
+            const bytes = Uint8Array.from(bin, c => c.charCodeAt(0));
+            const data = JSON.parse(new TextDecoder("utf-8").decode(bytes));
+            if (!data || typeof data !== "object") throw new Error("not an object");
+            if (!Array.isArray(data.claims)) throw new Error("missing 'claims' array");
+            window.factCheckDocument = data;
+            bootViewer();
+            return { handled: true, ok: true };
+          } catch (e) {
+            return { handled: true, ok: false, error: e.message };
+          }
+        }
+
         function readFile(file) {
           if (!file) return;
           const reader = new FileReader();
@@ -348,6 +389,7 @@
 
       reloadBtn.addEventListener("click", () => {
         window.factCheckDocument = null;
+        if (location.hash) history.replaceState(null, "", location.pathname + location.search);
         showLoader();
       });
 
@@ -356,10 +398,16 @@
       window.__bootViewer = bootViewer;
       window.__showLoader = showLoader;
 
-      if (window.factCheckDocument) {
+      const hashResult = loadFromHash();
+      if (hashResult.handled && hashResult.ok) {
+        // booted via hash
+      } else if (window.factCheckDocument) {
         bootViewer();
       } else {
         showLoader();
+        if (hashResult.handled && !hashResult.ok) {
+          showError("Could not load document from URL: " + hashResult.error);
+        }
       }
     })();
 
@@ -389,12 +437,21 @@
         selectedIds: null,
         activeId: null,
         checkedIds: new Set(),
-        flaggedIds: new Set(),
         splitPct: 50,
       };
 
       function esc(s) {
         return String(s ?? "").replace(/[&<>"']/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
+      }
+
+      function renderCorrection(md) {
+        let s = esc(md);
+        s = s.replace(/\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)/g,
+          (_, label, url) => '<a href="' + url + '" target="_blank" rel="noopener noreferrer">' + label + '</a>');
+        s = s.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
+        s = s.replace(/\*([^*]+)\*/g, "<strong>$1</strong>");
+        s = s.replace(/~([^~]+)~/g, "<s>$1</s>");
+        return s;
       }
 
       function iconExternal() {
@@ -412,12 +469,47 @@
       function iconHelp() {
         return '<svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9.09 9a3 3 0 1 1 5.82 1c0 2-3 2-3 4"/><path d="M12 17h.01"/></svg>';
       }
-      function iconWarn() {
-        return '<svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 2 20h20L12 3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>';
+      function iconCopy() {
+        return '<svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>';
       }
-      function iconFlag(filled) {
-        return '<svg class="icon-sm" viewBox="0 0 24 24" fill="' + (filled ? "currentColor" : "none") + '" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 21V4h13l-2 4 2 4H4"/></svg>';
+
+      function renderSourceQuotes(claim) {
+        const sources = Array.isArray(claim.sources) ? claim.sources : [];
+        const anyQuotes = sources.some(s => s && s.quote);
+        const legacyQuote = !anyQuotes && claim.sourceQuote ? String(claim.sourceQuote) : "";
+        if (!sources.length && !legacyQuote) {
+          return '<div class="empty">No directly linkable public source was located for this exact claim.</div>';
+        }
+        const cards = [];
+        if (legacyQuote) {
+          cards.push(
+            '<div class="source-quote-card">' +
+              '<blockquote>' + esc(legacyQuote) + '</blockquote>' +
+            '</div>'
+          );
+        }
+        for (const s of sources) {
+          if (!s || !s.url) continue;
+          const url = esc(s.url);
+          const title = esc(s.title || s.url);
+          const quote = s.quote ? '<blockquote>' + esc(s.quote) + '</blockquote>' : "";
+          cards.push(
+            '<div class="source-quote-card">' +
+              quote +
+              '<div class="source-quote-foot">' +
+                '<a class="source-quote-link" href="' + url + '" target="_blank" rel="noreferrer">' +
+                  '<span>' + title + '</span>' + iconExternal() +
+                '</a>' +
+                '<button class="copy-url-btn" data-copy-url="' + url + '" title="Copy URL" aria-label="Copy URL">' +
+                  iconCopy() +
+                '</button>' +
+              '</div>' +
+            '</div>'
+          );
+        }
+        return '<div class="source-quotes">' + cards.join("") + '</div>';
       }
+
       function pill(verdict) {
         return '<span class="pill" style="' + verdictStyles[verdict].pill + '">' + esc(verdict) + '</span>';
       }
@@ -491,7 +583,6 @@
                 <div class="viewer-actions">
                   <button id="resetFactCheckBtn" class="btn">Reset fact check</button>
                   <button id="newFactCheckBtn" class="btn">New fact check</button>
-                  <button id="copyFlaggedBtn" class="btn btn-primary" ${state.flaggedIds.size === 0 ? "disabled" : ""}>Copy flagged${state.flaggedIds.size ? ` (${state.flaggedIds.size})` : ""}</button>
                 </div>
               </section>
 
@@ -507,10 +598,9 @@
                 <div class="claims-list">
                   ${claims.map(claim => {
                     const active = state.activeId === claim.id && state.selectedIds && state.selectedIds.includes(claim.id);
-                    const flagged = state.flaggedIds.has(claim.id);
-                    return `<button class="claim-card${active ? " active" : ""}${flagged ? " flagged" : ""}" data-open-claim="${esc(claim.id)}" style="${active ? verdictStyles[claim.verdict].soft : ""}">
+                    return `<button class="claim-card${active ? " active" : ""}" data-open-claim="${esc(claim.id)}" style="${active ? verdictStyles[claim.verdict].soft : ""}">
                       <div class="claim-top">
-                        <div class="claim-id">Claim ${esc(claim.id)}${flagged ? ' <span class="flag-dot" title="Flagged">'+iconFlag(true)+'</span>' : ''}</div>
+                        <div class="claim-id">Claim ${esc(claim.id)}</div>
                         ${pill(claim.verdict)}
                       </div>
                       <div class="claim-text">${esc(claim.claim)}</div>
@@ -542,32 +632,12 @@
 
         document.getElementById("resetFactCheckBtn").addEventListener("click", () => {
           state.checkedIds.clear();
-          state.flaggedIds.clear();
           closeModal();
         });
         document.getElementById("newFactCheckBtn").addEventListener("click", () => {
           window.factCheckDocument = null;
           if (window.__showLoader) window.__showLoader();
         });
-
-        const copyBtn = document.getElementById("copyFlaggedBtn");
-        if (copyBtn) {
-          copyBtn.addEventListener("click", async () => {
-            const ids = Array.from(state.flaggedIds);
-            if (!ids.length) return;
-            const lines = ids.map(id => cm[id]?.snippet || cm[id]?.claim).filter(Boolean);
-            const text = lines.join("\n");
-            try {
-              await navigator.clipboard.writeText(text);
-              copyBtn.textContent = `Copied ${lines.length}`;
-              copyBtn.disabled = true;
-              setTimeout(() => render(), 1500);
-            } catch (_) {
-              copyBtn.textContent = "Copy failed";
-              setTimeout(() => render(), 1500);
-            }
-          });
-        }
 
         app.querySelectorAll("[data-open-claim]").forEach(el => {
           el.addEventListener("click", () => openClaims([el.getAttribute("data-open-claim")]));
@@ -655,9 +725,8 @@
                 <h3>${esc(activeClaim.claim)}</h3>
               </div>
               <div style="display:flex;gap:8px;align-items:center;flex-shrink:0">
-                <button class="btn flag-toggle${state.flaggedIds.has(activeClaim.id) ? " flagged" : ""}" id="flagToggleBtn" aria-pressed="${state.flaggedIds.has(activeClaim.id)}">
-                  ${iconFlag(state.flaggedIds.has(activeClaim.id))}
-                  <span>${state.flaggedIds.has(activeClaim.id) ? "Flagged" : "Flag"}</span>
+                <button class="btn btn-primary copy-correction-btn" id="copyCorrectionBtn">
+                  ${activeClaim.correction ? "Copy correction" : "Copy quote"}
                 </button>
                 <button class="close-btn" id="closeModal" aria-label="Close">✕</button>
               </div>
@@ -679,28 +748,18 @@
                     <div class="label">${iconHelp()} Check</div>
                     <div style="font-size:14px;line-height:1.8">${esc(activeClaim.check)}</div>
                   </div>
+
+                  ${activeClaim.correction ? `
+                    <div class="correction-box">
+                      <div class="correction-label">Proposed correction</div>
+                      <div class="correction-body">${renderCorrection(activeClaim.correction)}</div>
+                    </div>` : ""}
                 </div>
 
                 <div style="display:flex;flex-direction:column;gap:20px">
                   <div class="card">
-                    <div class="label">${iconQuote()} Source quote</div>
-                    <blockquote>${esc(activeClaim.sourceQuote)}</blockquote>
-                  </div>
-
-                  <div class="card">
-                    <div class="label">${iconWarn()} Sources</div>
-                    ${
-                      activeClaim.sources && activeClaim.sources.length
-                        ? `<div class="sources">
-                            ${activeClaim.sources.map(source =>
-                              `<a class="source-link" href="${esc(source.url)}" target="_blank" rel="noreferrer">
-                                <span>${esc(source.title)}</span>
-                                <span>${iconExternal()}</span>
-                              </a>`
-                            ).join("")}
-                          </div>`
-                        : `<div class="empty">No directly linkable public source was located for this exact claim.</div>`
-                    }
+                    <div class="label">${iconQuote()} Source quotes</div>
+                    ${renderSourceQuotes(activeClaim)}
                   </div>
                 </div>
               </div>
@@ -709,13 +768,38 @@
         `);
 
         document.getElementById("closeModal").onclick = closeModal;
-        const flagToggle = document.getElementById("flagToggleBtn");
-        if (flagToggle) {
-          flagToggle.addEventListener("click", () => {
-            const id = activeClaim.id;
-            if (state.flaggedIds.has(id)) state.flaggedIds.delete(id);
-            else state.flaggedIds.add(id);
-            render();
+
+        asideSection.querySelectorAll(".copy-url-btn").forEach(btn => {
+          btn.addEventListener("click", async (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            const url = btn.getAttribute("data-copy-url");
+            if (!url) return;
+            try {
+              await navigator.clipboard.writeText(url);
+              btn.classList.add("copied");
+              setTimeout(() => btn.classList.remove("copied"), 1200);
+            } catch (_) { /* noop */ }
+          });
+        });
+
+        const copyCorrectionBtn = document.getElementById("copyCorrectionBtn");
+        if (copyCorrectionBtn) {
+          copyCorrectionBtn.addEventListener("click", async () => {
+            const text = activeClaim.correction || activeClaim.snippet || activeClaim.claim || "";
+            if (!text) return;
+            const orig = copyCorrectionBtn.textContent;
+            try {
+              await navigator.clipboard.writeText(text);
+              copyCorrectionBtn.textContent = "Copied";
+            } catch (_) {
+              copyCorrectionBtn.textContent = "Copy failed";
+            }
+            copyCorrectionBtn.disabled = true;
+            setTimeout(() => {
+              copyCorrectionBtn.textContent = orig;
+              copyCorrectionBtn.disabled = false;
+            }, 1500);
           });
         }
         asideSection.querySelectorAll("[data-tab-id]").forEach(el => {

@@ -2,7 +2,7 @@
 
 A standalone, single-file viewer for sentence-by-sentence fact-check documents. Paste or drop in a `factCheckDocument.js` (or `.json`) file and the viewer renders it.
 
-**Everything stays in your browser.** There is no server. The file is parsed locally with the browser's `FileReader` API, so it's safe to use with embargoed material.
+**Everything stays in your browser.** There is no server. The file is parsed locally with the browser's `FileReader` API (or, for shared links, decoded from the URL fragment), so it's safe to use with embargoed material.
 
 ## Use it
 
@@ -10,8 +10,9 @@ Open the hosted page (see below) and either:
 
 - **Drop a file** — drag your `factCheckDocument.js` or a `.json` file onto the drop zone.
 - **Paste** — paste the contents of either format into the textarea and click **Load document**.
+- **Share via URL** — append `#data_b64=<base64-utf8-json>` to the page URL. The viewer decodes the fragment locally and boots straight into the document. Browsers never send fragments to the server, so the payload stays client-side. Both standard and URL-safe base64 are accepted.
 
-To swap to a different document, click **Load different document** in the bottom-right corner.
+To swap to a different document, click **Load different document** in the bottom-right corner. This also clears any `#data_b64` from the URL.
 
 ## Document format
 
@@ -29,14 +30,40 @@ window.factCheckDocument = {
       "verdict": "green",            // green | yellow | red | blue | purple
       "check": "What I found when checking it",
       "snippet": "exact passage text to highlight",
-      "sourceQuote": "...",
-      "sources": [{ "title": "NYT", "url": "https://..." }]
+      "sources": [
+        {
+          "title": "NYT",
+          "url": "https://...",
+          "quote": "the substantiating quote from this source"
+        }
+      ],
+      "correction": "~wrong text~ *corrected text* -- short justification [source](https://...)"
     }
   ]
 }
 ```
 
 A pure JSON object (without the `window.factCheckDocument =` wrapper) also works.
+
+### Source quotes
+
+Each entry in `sources` can carry an optional `quote` string — the substantiating excerpt from that source. The viewer renders one card per source containing the quote (if present), the source title (clickable, opens the URL in a new tab), and a small copy-icon button that copies the URL to the clipboard.
+
+For backwards compatibility, the older top-level `sourceQuote` field is still accepted and renders as a quote-only card at the top of the list when no `sources[].quote` is provided.
+
+### Proposed corrections
+
+For yellow/red claims you can include a `correction` string. It renders inside an amber "Proposed correction" box on the claim card. The viewer parses a tiny markdown subset:
+
+- `~text~` → strikethrough (the wrong wording)
+- `*text*` or `**text**` → bold (the corrected wording)
+- `[label](url)` → external link (only `http://` / `https://` URLs are linked)
+
+Anything else is rendered as plain text. Convention:
+
+```
+~wrong~ *updated* [optional surrounding context] -- short justification [source label](url)
+```
 
 ## Running locally
 
