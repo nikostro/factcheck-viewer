@@ -74,9 +74,17 @@
     .card.soft{background:#f8fafc}
     .label{margin-bottom:8px;font-size:11px;font-weight:800;letter-spacing:.18em;text-transform:uppercase;color:var(--muted)}
     blockquote{margin:0;border-left:4px solid #e2e8f0;padding-left:16px;white-space:pre-wrap;font-size:14px;line-height:1.8}
-    .sources{display:flex;flex-direction:column;gap:8px}
-    .source-link{display:flex;justify-content:space-between;gap:12px;align-items:center;text-decoration:none;color:inherit;border:1px solid var(--border);background:#f8fafc;border-radius:18px;padding:14px 16px}
-    .source-link:hover{background:#fff}
+    .source-quotes{display:flex;flex-direction:column;gap:10px}
+    .source-quote-card{border:1px solid var(--border);background:#f8fafc;border-radius:18px;padding:14px 16px;display:flex;flex-direction:column;gap:10px}
+    .source-quote-card:hover{background:#fff}
+    .source-quote-card blockquote{margin:0;border-left:4px solid #e2e8f0;padding-left:14px;font-size:14px;line-height:1.7;white-space:pre-wrap;color:#1f2937}
+    .source-quote-foot{display:flex;align-items:center;justify-content:space-between;gap:12px}
+    .source-quote-link{display:flex;align-items:center;gap:8px;text-decoration:none;color:inherit;font-weight:500;flex:1;min-width:0}
+    .source-quote-link span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .source-quote-link:hover{color:#1d4ed8}
+    .copy-url-btn{background:transparent;border:1px solid var(--border);border-radius:8px;padding:6px;cursor:pointer;color:var(--muted);display:inline-flex;align-items:center;justify-content:center;flex-shrink:0}
+    .copy-url-btn:hover{background:#fff;color:#111827}
+    .copy-url-btn.copied{color:#16a34a;border-color:#16a34a}
     .empty{border:1px dashed var(--border);background:#f8fafc;border-radius:18px;padding:16px;color:var(--muted);font-size:14px;line-height:1.6}
     .correction-box{border:1px solid #fcd34d;background:#fef3c7;border-left:4px solid #f59e0b;border-radius:18px;padding:14px 16px;font-size:14px;line-height:1.6}
     .correction-box .correction-label{font-size:11px;font-weight:800;letter-spacing:.18em;text-transform:uppercase;color:#92400e;margin-bottom:8px}
@@ -170,19 +178,25 @@
             claim: "The bridge opened in 2018.",
             verdict: "green",
             check: "Construction and opening records confirm a 2018 opening date.",
-            sourceQuote: "Public records list the opening ceremony in September 2018.",
             snippet: "the bridge opened in 2018",
-            sources: [{ title: "Example city release", url: "https://example.com/source-1" }]
+            sources: [{
+              title: "Example city release",
+              url: "https://example.com/source-1",
+              quote: "Public records list the opening ceremony in September 2018."
+            }]
           },
           {
             id: "C2",
             claim: "The bridge came in under budget.",
             verdict: "yellow",
             check: "Available reports show mixed estimates; final audited numbers are unclear.",
-            sourceQuote: "The final accounting is pending external audit.",
             snippet: "it came in under budget",
             correction: "~came in under budget~ *final cost is still pending audit* -- public reports do not yet confirm the final number [Example budget report](https://example.com/source-2)",
-            sources: [{ title: "Example budget report", url: "https://example.com/source-2" }]
+            sources: [{
+              title: "Example budget report",
+              url: "https://example.com/source-2",
+              quote: "The final accounting is pending external audit."
+            }]
           },
           {
             id: "C3",
@@ -455,9 +469,47 @@
       function iconHelp() {
         return '<svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9.09 9a3 3 0 1 1 5.82 1c0 2-3 2-3 4"/><path d="M12 17h.01"/></svg>';
       }
-      function iconWarn() {
-        return '<svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 2 20h20L12 3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>';
+      function iconCopy() {
+        return '<svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>';
       }
+
+      function renderSourceQuotes(claim) {
+        const sources = Array.isArray(claim.sources) ? claim.sources : [];
+        const anyQuotes = sources.some(s => s && s.quote);
+        const legacyQuote = !anyQuotes && claim.sourceQuote ? String(claim.sourceQuote) : "";
+        if (!sources.length && !legacyQuote) {
+          return '<div class="empty">No directly linkable public source was located for this exact claim.</div>';
+        }
+        const cards = [];
+        if (legacyQuote) {
+          cards.push(
+            '<div class="source-quote-card">' +
+              '<blockquote>' + esc(legacyQuote) + '</blockquote>' +
+            '</div>'
+          );
+        }
+        for (const s of sources) {
+          if (!s || !s.url) continue;
+          const url = esc(s.url);
+          const title = esc(s.title || s.url);
+          const quote = s.quote ? '<blockquote>' + esc(s.quote) + '</blockquote>' : "";
+          cards.push(
+            '<div class="source-quote-card">' +
+              quote +
+              '<div class="source-quote-foot">' +
+                '<a class="source-quote-link" href="' + url + '" target="_blank" rel="noreferrer">' +
+                  '<span>' + title + '</span>' + iconExternal() +
+                '</a>' +
+                '<button class="copy-url-btn" data-copy-url="' + url + '" title="Copy URL" aria-label="Copy URL">' +
+                  iconCopy() +
+                '</button>' +
+              '</div>' +
+            '</div>'
+          );
+        }
+        return '<div class="source-quotes">' + cards.join("") + '</div>';
+      }
+
       function pill(verdict) {
         return '<span class="pill" style="' + verdictStyles[verdict].pill + '">' + esc(verdict) + '</span>';
       }
@@ -706,24 +758,8 @@
 
                 <div style="display:flex;flex-direction:column;gap:20px">
                   <div class="card">
-                    <div class="label">${iconQuote()} Source quote</div>
-                    <blockquote>${esc(activeClaim.sourceQuote)}</blockquote>
-                  </div>
-
-                  <div class="card">
-                    <div class="label">${iconWarn()} Sources</div>
-                    ${
-                      activeClaim.sources && activeClaim.sources.length
-                        ? `<div class="sources">
-                            ${activeClaim.sources.map(source =>
-                              `<a class="source-link" href="${esc(source.url)}" target="_blank" rel="noreferrer">
-                                <span>${esc(source.title)}</span>
-                                <span>${iconExternal()}</span>
-                              </a>`
-                            ).join("")}
-                          </div>`
-                        : `<div class="empty">No directly linkable public source was located for this exact claim.</div>`
-                    }
+                    <div class="label">${iconQuote()} Source quotes</div>
+                    ${renderSourceQuotes(activeClaim)}
                   </div>
                 </div>
               </div>
@@ -732,6 +768,21 @@
         `);
 
         document.getElementById("closeModal").onclick = closeModal;
+
+        asideSection.querySelectorAll(".copy-url-btn").forEach(btn => {
+          btn.addEventListener("click", async (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            const url = btn.getAttribute("data-copy-url");
+            if (!url) return;
+            try {
+              await navigator.clipboard.writeText(url);
+              btn.classList.add("copied");
+              setTimeout(() => btn.classList.remove("copied"), 1200);
+            } catch (_) { /* noop */ }
+          });
+        });
+
         const copyCorrectionBtn = document.getElementById("copyCorrectionBtn");
         if (copyCorrectionBtn) {
           copyCorrectionBtn.addEventListener("click", async () => {

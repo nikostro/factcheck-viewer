@@ -30,8 +30,13 @@ window.factCheckDocument = {
       "verdict": "green",            // green | yellow | red | blue | purple
       "check": "What I found when checking it",
       "snippet": "exact passage text to highlight",
-      "sourceQuote": "...",
-      "sources": [{ "title": "NYT", "url": "https://..." }],
+      "sources": [
+        {
+          "title": "NYT",
+          "url": "https://...",
+          "quote": "the substantiating quote from this source"
+        }
+      ],
       "correction": "~wrong text~ *corrected text* -- short justification [source](https://...)"
     }
   ]
@@ -39,6 +44,12 @@ window.factCheckDocument = {
 ```
 
 A pure JSON object (without the `window.factCheckDocument =` wrapper) also works.
+
+### Source quotes
+
+Each entry in `sources` can carry an optional `quote` string — the substantiating excerpt from that source. The viewer renders one card per source containing the quote (if present), the source title (clickable, opens the URL in a new tab), and a small copy-icon button that copies the URL to the clipboard.
+
+For backwards compatibility, the older top-level `sourceQuote` field is still accepted and renders as a quote-only card at the top of the list when no `sources[].quote` is provided.
 
 ### Proposed corrections
 
