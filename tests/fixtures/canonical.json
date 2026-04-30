@@ -1,0 +1,47 @@
+{
+  "title": "Canonical fact-check fixture",
+  "subtitle": "Used by Playwright tests",
+  "passage": "The bridge opened in 2018 and ridership doubled.",
+  "segments": [
+    { "text": "The bridge opened in 2018", "claimIds": ["C1"], "verdict": "green" },
+    { "text": " and " },
+    { "text": "ridership doubled", "claimIds": ["C2"], "verdict": "red" },
+    { "text": "." }
+  ],
+  "claims": [
+    {
+      "id": "C1",
+      "claim": "The bridge opened in 2018.",
+      "verdict": "green",
+      "snippet": "The bridge opened in 2018",
+      "check": "Public records confirm the 2018 opening.",
+      "sources": [
+        {
+          "title": "Example city release",
+          "url": "https://example.com/source-1",
+          "quote": "Public records list the opening ceremony in September 2018."
+        }
+      ]
+    },
+    {
+      "id": "C2",
+      "claim": "Ridership doubled in the first year.",
+      "verdict": "red",
+      "snippet": "ridership doubled",
+      "check": "Transit data shows 32% growth, not a doubling.",
+      "correction": "~doubled~ *grew about 32%* in the first year -- transit data shows a 32% rise [Transit data](https://example.com/transit)",
+      "sources": [
+        {
+          "title": "Example transit data",
+          "url": "https://example.com/source-2",
+          "quote": "Ridership increased 32% compared to the prior year."
+        },
+        {
+          "title": "Backup source",
+          "url": "https://example.com/source-3",
+          "quote": "Confirms 32% rise."
+        }
+      ]
+    }
+  ]
+}
