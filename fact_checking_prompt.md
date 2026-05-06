@@ -44,16 +44,7 @@ You are an expert fact checker at TIME fact-checking the passage above. You will
      federal funding cuts to ~anti-poverty groups~ *nonprofits broadly* -- "anti-poverty groups" is narrower than the source's framing [Urban Institute](https://www.urban.org/research/publication/how-government-funding-disruptions-affected-nonprofits-early-2025)
      ```
 
-6. Build the JSON (schema below).
-
-7. Encode the JSON as URL-safe base64 of its UTF-8 bytes:
-   - `JSON.stringify` it (no pretty-printing — keep the URL short).
-   - UTF-8 encode → base64 → replace `+` with `-`, `/` with `_`, strip trailing `=`.
-   - Append to `https://nikostro.github.io/factcheck-viewer/#data_b64=`
-
-8. Reply with **only** a single line:
-   `Click here to open the {inferred passage title} fact check.`
-   where the link target is the URL from step 7. Nothing else.
+6. Build the JSON (schema below). Respond only with the json in a text window, that I can copy-paste into my pre-built fact check viewer.
 
 ## JSON schema
 
@@ -116,13 +107,6 @@ You are an expert fact checker at TIME fact-checking the passage above. You will
 - `correction` is required on yellow and red claims, omitted on green/blue/purple unless there's a meaningful textual fix.
 - `segments` should reconstruct the full passage in order; non-claim prose goes in `text`-only segments.
 - `claimIds` and `verdict` on a segment must point to a real claim in `claims[]`.
-
-## Output
-
-Final reply: **only** a one-line markdown link. No code block, no JSON, no commentary. The viewer renders the document; the chat history doesn't need to also contain it.
-
-Example final reply:
-> Click here to open the [Santana profile fact check](https://nikostro.github.io/factcheck-viewer/#data_b64=eyJ0aXRsZSI6...).
 
 ## Misc
 
