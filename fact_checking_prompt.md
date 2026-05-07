@@ -44,57 +44,100 @@ You are an expert fact checker at TIME fact-checking the passage above. You will
      federal funding cuts to ~anti-poverty groups~ *nonprofits broadly* -- "anti-poverty groups" is narrower than the source's framing [Urban Institute](https://www.urban.org/research/publication/how-government-funding-disruptions-affected-nonprofits-early-2025)
      ```
 
-6. Build the JSON (schema below). Respond only with the json in a text window, that I can copy-paste into my pre-built fact check viewer.
+6. Build the JSON (example below). Respond only with the json in a text window, that I can copy-paste into my pre-built fact check viewer.
 
-## JSON schema
+## JSON example
 
 ```json
 {
-  "title": "Fact check: {1-2 word summary}",
+  "title": "Fact check: Santana profile",
   "subtitle": "Sentence-by-sentence / clause-by-clause fact check",
-  "description": "One-liner describing scope or methodology.",
+  "description": "Optional one-liner describing methodology or scope.",
   "legend": {
     "green": "directly confirmed by a primary source",
     "yellow": "needs clarification or has a caveat",
     "red": "false or materially wrong",
-    "blue": "needs verification against the interview I conducted",
+    "blue": "exact quote needs transcript or recording",
     "purple": "only weaker / indirect confirmation"
   },
-  "passage": "The original passage, verbatim.",
+  "passage": "For Miguel Santana, CEO of the $1.2 billion California Community Foundation, 2025 was the second-biggest spending year ever.",
   "segments": [
-    { "text": "Plain prose, " },
-    { "text": "highlighted phrase tied to claim 1", "claimIds": ["1"], "verdict": "green" },
-    { "text": ", more prose " },
-    { "text": "another highlighted phrase", "claimIds": ["2"], "verdict": "red" },
+    { "text": "For " },
+    { "text": "Miguel Santana, CEO", "claimIds": ["1"], "verdict": "green" },
+    { "text": " of the " },
+    { "text": "$1.2 billion California Community Foundation", "claimIds": ["2"], "verdict": "red" },
+    { "text": ", 2025 was the " },
+    { "text": "second-biggest spending year ever", "claimIds": ["3"], "verdict": "red" },
     { "text": "." }
   ],
   "highLevelRead": [
-    "Top-level observation 1 from the holistic pass.",
-    "Top-level observation 2."
+    "The biggest clean error is the foundation-size figure: CCF's own materials put it at roughly $2.3B-$2.54B in assets, not $1.2B.",
+    "The 'second-biggest spending year ever' ranking is contradicted by CCF's own 2022 and 2023 reports."
   ],
   "claims": [
     {
       "id": "1",
-      "claim": "Restated claim, atomic.",
+      "claim": "Miguel Santana is CEO of the California Community Foundation.",
       "verdict": "green",
-      "snippet": "exact passage substring this claim covers",
-      "check": "One-paragraph explanation of what I found.",
+      "snippet": "Miguel Santana, CEO",
+      "check": "Confirmed by CCF's leadership page.",
       "sources": [
         {
-          "title": "Source label",
-          "url": "https://example.com/page#:~:text=First%20four%20words",
-          "quote": "exact substantiating excerpt from the source"
+          "title": "Miguel A. Santana - CCF",
+          "url": "https://www.calfund.org/board-of-directors/miguel-a-santana/",
+          "quote": "President & Chief Executive Officer, California Community Foundation."
         }
       ]
     },
     {
       "id": "2",
-      "claim": "...",
+      "claim": "The California Community Foundation is a $1.2 billion organization.",
       "verdict": "red",
-      "snippet": "...",
-      "check": "...",
-      "sources": [{ "title": "...", "url": "https://...", "quote": "..." }],
-      "correction": "~wrong~ *right* -- justification [source](https://...)"
+      "snippet": "$1.2 billion California Community Foundation",
+      "check": "False. CCF's FY2025 audited statements list total assets of $2.5435 billion.",
+      "sources": [
+        {
+          "title": "FY2024-2025 Audited Statements",
+          "url": "https://www.calfund.org/wp-content/uploads/Audited-Financial-Statements-2024-2025.pdf",
+          "quote": "Total assets $2,543,500 (in thousands)."
+        }
+      ],
+      "correction": "\"$~1.2~*2.54*billion California Community Foundation\"—CCF's FY2025 audited statements list total assets of $2.54B according to [audited statements](https://www.calfund.org/wp-content/uploads/Audited-Financial-Statements-2024-2025.pdf)"
+    },
+    {
+      "id": "3",
+      "claim": "2025 was CCF's second-biggest spending year ever.",
+      "verdict": "red",
+      "snippet": "second-biggest spending year ever",
+      "check": "Contradicted by CCF's own reports. FY2022 and FY2023 both exceeded FY2025.",
+      "sources": [
+        {
+          "title": "CCF 2022 Annual Report",
+          "url": "https://www.calfund.org/2022-annualreport/financials/",
+          "quote": "just over $440 million"
+        },
+        {
+          "title": "CCF 2023 Annual Report",
+          "url": "https://www.calfund.org/2023-annualreport/financials/",
+          "quote": "nearly $359 million"
+        }
+      ],
+      "correction": "\"~second-~ *third-*biggest spending year\"—FY2022 ($440M) and FY2023 ($359M) both exceeded FY2025's $351.5M [2022 report](https://www.calfund.org/2022-annualreport/financials/)"
+    },
+    {
+      "id": "4",
+      "claim": "Federal funding cuts hit anti-poverty groups in this period.",
+      "verdict": "yellow",
+      "snippet": "federal funding cuts to anti-poverty groups",
+      "check": "Directionally true but imprecise. Solid evidence of federal funding disruptions hitting nonprofits broadly; no clean primary source uses the narrower phrase 'anti-poverty groups.'",
+      "sources": [
+        {
+          "title": "Urban Institute - Government Funding Disruptions",
+          "url": "https://www.urban.org/research/publication/how-government-funding-disruptions-affected-nonprofits-early-2025",
+          "quote": "Nonprofits across subsectors reported disruptions to federal funding in early 2025."
+        }
+      ],
+      "correction": "\"federal funding cuts to ~anti-poverty groups~ *non profits*\"—documented by Urban Institute, but 'anti-poverty groups' is narrower than the source [Urban Institute](https://www.urban.org/research/publication/how-government-funding-disruptions-affected-nonprofits-early-2025)"
     }
   ]
 }
