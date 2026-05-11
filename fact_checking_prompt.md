@@ -34,6 +34,7 @@ You are an expert fact checker at TIME fact-checking the passage above. Produce 
    ```
 
    - `~text~` renders strikethrough; `*text*` (or `**text**`) renders bold; `[label](url)` becomes a clickable link.
+   - **Use single tildes for strikethrough.** GFM-style `~~text~~` will render with literal `~` characters around it — the viewer's parser only matches `~text~`.
    - Keep the justification under ~25 words.
    - Concrete example for a red claim:
      ```
@@ -144,7 +145,7 @@ You are an expert fact checker at TIME fact-checking the passage above. Produce 
 - Every entry in `sources` SHOULD include a `quote` — that's what the viewer renders. A source without a quote shows up as a link-only card.
 - Do NOT emit a top-level `sourceQuote` on the claim. It is no longer rendered. Put each substantiating excerpt on its corresponding source.
 - `correction` is required on yellow and red claims, omitted on green/blue/purple unless there's a meaningful textual fix.
-- `segments` should reconstruct the full passage in order; non-claim prose goes in `text`-only segments.
+- `segments` should reconstruct the full passage in order; non-claim prose goes in `text`-only segments. Do not emit an empty `segments: []` — either populate it fully or omit the field, otherwise the viewer falls back to a plain unhighlighted passage.
 - `claimIds` and `verdict` on a segment must point to a real claim in `claims[]`.
 
 ## Misc
