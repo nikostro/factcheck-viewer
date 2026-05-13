@@ -122,8 +122,8 @@
     .steps .step-text code{background:#f1f5f9;border:1px solid var(--border);border-radius:6px;padding:1px 6px;font-size:13px}
     .warning-box{display:flex;gap:10px;align-items:flex-start;background:var(--yellow-soft);color:var(--yellow-text);border:1px solid var(--yellow-pill);border-radius:14px;padding:12px 14px;font-size:13px;line-height:1.5}
     .warning-box code{background:#fff;border:1px solid var(--yellow-pill);border-radius:6px;padding:1px 6px;font-size:12px;color:var(--yellow-text)}
-    .warning-body{display:flex;flex-direction:column;gap:10px;min-width:0;flex:1}
-    .warning-screenshot{max-width:100%;width:320px;border:1px solid var(--border);border-radius:10px;background:#fff;align-self:flex-start}
+    .warning-body{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:stretch;gap:14px;min-width:0;flex:1}
+    .warning-screenshot{height:100%;width:auto;max-width:160px;object-fit:contain;border:1px solid var(--border);border-radius:10px;background:#fff}
     .drop-zone{border:2px dashed var(--border);border-radius:18px;padding:24px;text-align:center;background:#f8fafc;transition:.15s;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px}
     .drop-zone:hover, .drop-zone.dragover{border-color:#94a3b8;background:#f1f5f9}
     .drop-zone strong{display:block;margin-bottom:4px;font-size:15px}
