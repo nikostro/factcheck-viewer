@@ -151,7 +151,6 @@
   <script>
     /* ---------- Loader: parse a pasted/uploaded factCheckDocument ---------- */
     (function loaderInit() {
-      const SUGGESTED_PROMPT_URL = "https://docs.google.com/document/d/1cKT74QdTjQr-zsw7hpkfgsYhcX43LAEyRURAM2zUiJg/";
       const exampleDocument = {
         title: "Example fact-check document",
         subtitle: "Demo content to preview the interface",
@@ -224,7 +223,7 @@
               <h1>Fact-check viewer</h1>
               <p class="sub">Load a <code>factCheckDocument</code> to view it. Your file is parsed in your browser and is never uploaded anywhere.</p>
               <div class="top-link-wrap">
-                <a class="btn top-link-btn" href="${SUGGESTED_PROMPT_URL}" target="_blank" rel="noreferrer">Suggested fact checking prompt</a>
+                <button id="copyPromptBtn" class="btn top-link-btn" type="button">Copy prompt</button>
               </div>
 
               <div class="privacy-note">
@@ -348,6 +347,27 @@
           pasteBox.focus();
           pasteBox.scrollTop = 0;
         });
+
+        const copyPromptBtn = document.getElementById("copyPromptBtn");
+        if (copyPromptBtn) {
+          copyPromptBtn.addEventListener("click", async () => {
+            const orig = copyPromptBtn.textContent;
+            copyPromptBtn.disabled = true;
+            try {
+              const res = await fetch("fact_checking_prompt.md", { cache: "no-cache" });
+              if (!res.ok) throw new Error("fetch failed");
+              const md = await res.text();
+              await navigator.clipboard.writeText(md);
+              copyPromptBtn.textContent = "Copied";
+            } catch (_) {
+              copyPromptBtn.textContent = "Copy failed";
+            }
+            setTimeout(() => {
+              copyPromptBtn.textContent = orig;
+              copyPromptBtn.disabled = false;
+            }, 1500);
+          });
+        }
 
         fileInput.addEventListener("change", (e) => readFile(e.target.files[0]));
 
