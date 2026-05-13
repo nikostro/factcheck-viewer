@@ -113,7 +113,17 @@
     .loader-panel{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);padding:32px}
     .loader-panel h1{font-size:28px;margin-bottom:8px}
     .loader-panel .sub{margin:0 0 24px}
-    .privacy-note{display:flex;gap:10px;align-items:flex-start;background:var(--green-soft);color:var(--green-text);border:1px solid var(--green-pill);border-radius:14px;padding:12px 14px;font-size:13px;line-height:1.5;margin-bottom:24px}
+    .privacy-note{display:flex;gap:10px;align-items:flex-start;background:var(--green-soft);color:var(--green-text);border:1px solid var(--green-pill);border-radius:14px;padding:12px 14px;font-size:13px;line-height:1.5;margin-top:24px}
+    .steps{list-style:none;counter-reset:step;padding:0;margin:0 0 24px}
+    .steps > li{display:flex;gap:14px;align-items:flex-start;counter-increment:step;margin-bottom:20px}
+    .steps > li::before{content:counter(step);flex-shrink:0;width:28px;height:28px;border-radius:999px;background:var(--text);color:#fff;font-weight:700;font-size:13px;display:inline-flex;align-items:center;justify-content:center;margin-top:2px}
+    .steps .step-body{flex:1;min-width:0;display:flex;flex-direction:column;gap:12px}
+    .steps .step-text{color:var(--text);line-height:1.6;font-size:15px}
+    .steps .step-text code{background:#f1f5f9;border:1px solid var(--border);border-radius:6px;padding:1px 6px;font-size:13px}
+    .warning-box{display:flex;gap:10px;align-items:flex-start;background:var(--yellow-soft);color:var(--yellow-text);border:1px solid var(--yellow-pill);border-radius:14px;padding:12px 14px;font-size:13px;line-height:1.5}
+    .warning-box code{background:#fff;border:1px solid var(--yellow-pill);border-radius:6px;padding:1px 6px;font-size:12px;color:var(--yellow-text)}
+    .warning-body{display:flex;flex-direction:column;gap:10px;min-width:0;flex:1}
+    .warning-screenshot{max-width:100%;width:320px;border:1px solid var(--border);border-radius:10px;background:#fff;align-self:flex-start}
     .drop-zone{border:2px dashed var(--border);border-radius:18px;padding:24px;text-align:center;background:#f8fafc;transition:.15s;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px}
     .drop-zone:hover, .drop-zone.dragover{border-color:#94a3b8;background:#f1f5f9}
     .drop-zone strong{display:block;margin-bottom:4px;font-size:15px}
@@ -221,15 +231,34 @@
           <div class="loader-wrap">
             <div class="loader-panel">
               <h1>Fact-check viewer</h1>
-              <p class="sub">Load a <code>factCheckDocument</code> to view it. Your file is parsed in your browser and is never uploaded anywhere.</p>
-              <div class="top-link-wrap">
-                <button id="copyPromptBtn" class="btn top-link-btn" type="button">Copy prompt</button>
-              </div>
 
-              <div class="privacy-note">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;margin-top:1px"><path d="M12 3l7 4v5c0 5-3.5 8.5-7 9-3.5-.5-7-4-7-9V7l7-4Z"/><path d="m9 12 2 2 4-4"/></svg>
-                <span><strong>Stays on your device.</strong> This page has no server. The file is read with the browser's FileReader API and parsed locally.</span>
-              </div>
+              <ol class="steps">
+                <li>
+                  <div class="step-body">
+                    <div class="step-text">Copy the fact-checking prompt below.</div>
+                    <div><button id="copyPromptBtn" class="btn" type="button">Copy prompt</button></div>
+                  </div>
+                </li>
+                <li>
+                  <div class="step-body">
+                    <div class="step-text">
+                      Paste the prompt into your favorite chatbot. I've tested with ChatGPT 5.5 Thinking — <code>extended</code> for short passages (~300 words), <code>heavy</code> for mid-length passages (~450 words), and <code>pro</code> for longer passages (up to ~1000 words). It still messes up for much longer passages (working on a fix).
+                    </div>
+                    <div class="warning-box">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;margin-top:2px"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                      <div class="warning-body">
+                        <div>Make sure you're using at least <code>extended</code> thinking. This <em>will not work</em> with ChatGPT <code>Instant</code> or Thinking <code>standard</code>.</div>
+                        <img src="assets/select_thinking.png" alt="ChatGPT model picker showing Thinking selected with Heavy mode, and the thinking-depth menu open showing Light, Standard, Extended, and Heavy options" class="warning-screenshot" />
+                      </div>
+                    </div>
+                  </div>
+                </li>
+                <li>
+                  <div class="step-body">
+                    <div class="step-text">Copy the formatted response you get back and paste it into the box below.</div>
+                  </div>
+                </li>
+              </ol>
 
               <textarea id="pasteBox" class="paste-box" placeholder='Paste either:&#10;&#10;  window.factCheckDocument = { "title": "...", "claims": [...] };&#10;&#10;or just the JSON object:&#10;&#10;  { "title": "...", "claims": [...] }'></textarea>
 
@@ -246,6 +275,11 @@
                 <span>drop a factCheckDocument.json or .js file here</span>
                 <input id="fileInput" type="file" accept=".js,.json,application/json,text/javascript" style="display:none" />
               </label>
+
+              <div class="privacy-note">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;margin-top:1px"><path d="M12 3l7 4v5c0 5-3.5 8.5-7 9-3.5-.5-7-4-7-9V7l7-4Z"/><path d="m9 12 2 2 4-4"/></svg>
+                <span><strong>Stays on your device.</strong> This page has no server. The file is read with the browser's FileReader API and parsed locally.</span>
+              </div>
 
               <div id="err" class="err"></div>
 
