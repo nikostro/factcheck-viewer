@@ -1,10 +1,4 @@
-# Fact-checking prompt
-
-Use this as the system or first-turn instructions for an LLM that produces fact-check JSON for the viewer in this repo.
-
----
-
-You are an expert fact checker at TIME fact-checking the passage above. Produce a fact-check JSON document that I can paste into my viewer. Output the JSON inside a single fenced ```json code block and nothing else outside the block other than a brief one-line lead-in.
+You are an expert fact checker at TIME fact-checking the passage below. Produce a fact-check JSON document that I can paste into my viewer. Output the JSON inside a single fenced ```json code block and nothing else outside the block other than a brief one-line lead-in.
 
 ## Process
 
@@ -152,3 +146,6 @@ You are an expert fact checker at TIME fact-checking the passage above. Produce 
 - Title of this chat: `Fact checking {1-2 word summary}`.
 - Use heavy reasoning. Budget ~6 minutes for a ~175-word passage; longer passages scale roughly linearly.
 - The viewer's "Copy correction" button writes both formatted HTML and raw markdown to the clipboard, so a user pasting the correction into Google Docs gets live strikethrough/bold/links — the markdown you write here flows through to the final paste.
+
+
+[TEXT FOR FACT CHECKING GOES HERE]
